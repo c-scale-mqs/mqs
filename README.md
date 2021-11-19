@@ -1,2 +1,3 @@
-# mqs
-Basic stand-alone service to receive, redistribute and collate STAC queries
+# C-SCALE Metadata Query Service (MQS)
+
+Description comes here.

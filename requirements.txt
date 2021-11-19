@@ -1,0 +1,10 @@
+attrs
+pydantic[dotenv]
+stac_pydantic==2.0.*
+stac-fastapi.types
+stac-fastapi.api
+stac-fastapi.extensions
+shapely
+fastapi-utils
+httpx
+uvicorn[standard]

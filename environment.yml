@@ -1,0 +1,9 @@
+name: cscale-mqs
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9.7
+  - pip=21.3.1
+  - pip:
+    - -r requirements.txt
+
