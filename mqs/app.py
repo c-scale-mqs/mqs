@@ -1,5 +1,11 @@
 """MQS STAC-FastAPI application"""
 from stac_fastapi.api.app import StacApi
+from stac_fastapi.extensions.core import (
+    FieldsExtension,
+    QueryExtension,
+    SortExtension,
+    ContextExtension,
+)
 
 from mqs.config import settings
 from mqs.core import CoreCrudClient
@@ -8,6 +14,11 @@ from mqs.types.search import MqsSTACSearch
 
 api = StacApi(
     settings=settings,
+    extensions=[
+        SortExtension(),
+        ContextExtension(),
+        # currently FieldsExtension and QueryExtension are not implemented
+    ],
     client=CoreCrudClient(),
     search_request_model=MqsSTACSearch,
 )
