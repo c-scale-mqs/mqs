@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+
+  web:
+    build: .
+    environment:
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - RELOAD=false
+      - ENVIRONMENT=local
+      - WEB_CONCURRENCY=1
+    command: bash -c "python -m mqs.app"
+    ports:
+      - "8000:8000"

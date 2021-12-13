@@ -3,13 +3,13 @@ import asyncio
 import logging
 import typing
 from datetime import datetime
-from typing import List, Optional, Set, Type, Union, Dict
+from typing import Dict, List, Optional, Set, Type, Union
 from urllib.parse import urlparse, urlunparse
 
 import attr
-from fastapi.exceptions import HTTPException
 import httpx
 from fastapi import Request
+from fastapi.exceptions import HTTPException
 from pydantic.networks import AnyHttpUrl
 from stac_fastapi.types.stac import Collection, Collections, Item, ItemCollection
 from stac_pydantic.links import Relations

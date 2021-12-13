@@ -1,8 +1,9 @@
 """API configuration."""
-from stac_fastapi.types.config import ApiSettings
 from typing import List, Optional
+
 from pydantic import BaseModel
 from pydantic.networks import AnyHttpUrl
+from stac_fastapi.types.config import ApiSettings
 
 
 class DataProvider(BaseModel):
