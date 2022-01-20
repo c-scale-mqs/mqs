@@ -15,6 +15,7 @@ from stac_fastapi.types.stac import Collection, Collections, Item, ItemCollectio
 from stac_pydantic.links import Relations
 
 from mqs.config import settings
+from mqs import gocdb
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +33,34 @@ def stac_request(
     alternative_json: Optional[dict] = None,
 ) -> httpx.Response:
 
-    api_url = {
-        "scheme": external_stac_url.scheme,
-        "netloc": external_stac_url.host
+    api_scheme = external_stac_url.scheme
+    api_netloc = (
+        external_stac_url.host
         if not external_stac_url.path
-        else external_stac_url.host + external_stac_url.path,
-        "path": fastapi_request.url.path if not alternative_path else alternative_path,
-        "params": "",
-        "query": fastapi_request.url.query
+        else external_stac_url.host + external_stac_url.path
+    )
+    api_path = fastapi_request.url.path if not alternative_path else alternative_path
+
+    if api_path.startswith(settings.root_path) and settings.root_path == "/":
+        api_path = api_path[1:]
+    elif api_path.startswith(settings.root_path):
+        api_path = api_path.split(settings.root_path)[1]
+
+    api_params = ""
+    api_query = (
+        fastapi_request.url.query
         if not (alternative_query or alternative_query == "")
-        else alternative_query,
-        "fragment": fastapi_request.url.fragment,
+        else alternative_query
+    )
+    api_fragment = fastapi_request.url.fragment
+
+    api_url = {
+        "scheme": api_scheme,
+        "netloc": api_netloc,
+        "path": api_path,
+        "params": api_params,
+        "query": api_query,
+        "fragment": api_fragment,
     }
 
     if alternative_json:
@@ -72,6 +90,7 @@ def request_all(fastapi_request: Request) -> ResponseDictType:
         response = stac_request(
             fastapi_request=fastapi_request,
             external_stac_url=data_provider.stac_url,
+            alternative_path="/collections",
         )
         all_responses[data_provider.identifier] = response
     return all_responses
@@ -79,34 +98,50 @@ def request_all(fastapi_request: Request) -> ResponseDictType:
 
 def request_collection(fastapi_request: Request) -> ResponseDictType:
     """Iterate through all data providers"""
+    provider_id = ""
+    data_providers = settings.data_providers
     try:
         provider_id, _ = fastapi_request.path_params["collectionId"].split(
             settings.collection_delimiter
         )
     except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail=f"collectionIds must be provided in the format dataproviderId{settings.collection_delimiter}collectionId",
+        logger.warn(
+            f"collectionIds should be provided in the format dataproviderId{settings.collection_delimiter}collectionId"
         )
-    try:
-        data_provider = [
-            dp for dp in settings.data_providers if dp.identifier == provider_id
-        ][0]
-    except IndexError:
-        raise HTTPException(
-            status_code=404, detail=f"Unknown data provider with id {provider_id}"
+        # raise HTTPException(
+        #     status_code=400,
+        #     detail=f"collectionIds must be provided in the format dataproviderId{settings.collection_delimiter}collectionId",
+        # )
+
+    if provider_id != "":
+        try:
+            data_providers = [
+                dp for dp in settings.data_providers if dp.identifier == provider_id
+            ]
+            data_providers[0]
+        except IndexError:
+            raise HTTPException(
+                status_code=404, detail=f"Unknown data provider with id {provider_id}"
+            )
+
+    for data_provider in data_providers:
+        response = stac_request(
+            fastapi_request=fastapi_request,
+            external_stac_url=data_provider.stac_url,
+            alternative_path=fastapi_request.url.path.replace(
+                provider_id + settings.collection_delimiter, ""
+            ),
         )
 
-    response = stac_request(
-        fastapi_request=fastapi_request,
-        external_stac_url=data_provider.stac_url,
-        alternative_path=fastapi_request.url.path.replace(
-            provider_id + settings.collection_delimiter, ""
-        ),
-    )
-
-    if response.status_code == 404:
-        raise HTTPException(status_code=404, detail="Collection or item not found")
+        if response.status_code != 404:
+            logger.info(
+                f"Collection or item found for data provider with id {data_provider.identifier}"
+            )
+            break
+        else:
+            logger.warn(
+                f"Collection or item not found for data provider with id {data_provider.identifier}"
+            )
 
     return {data_provider.identifier: response}
 

@@ -55,18 +55,64 @@ class CollectionSerializer(Serializer):
             else stac_collection["keywords"]
         )
 
+        providers = (
+            []
+            if "providers" not in stac_collection.keys()
+            else stac_collection["providers"]
+        )
+
+        id = (
+            []
+            if "id" not in stac_collection.keys()
+            else settings.collection_delimiter.join(
+                [provider_id, stac_collection["id"]]
+            )
+        )
+
+        stac_version = (
+            []
+            if "stac_version" not in stac_collection.keys()
+            else stac_collection["stac_version"]
+        )
+
+        title = (
+            [] if "title" not in stac_collection.keys() else stac_collection["title"]
+        )
+
+        description = (
+            []
+            if "description" not in stac_collection.keys()
+            else stac_collection["description"]
+        )
+
+        license = (
+            []
+            if "license" not in stac_collection.keys()
+            else stac_collection["license"]
+        )
+
+        summaries = (
+            []
+            if "summaries" not in stac_collection.keys()
+            else stac_collection["summaries"]
+        )
+
+        extent = (
+            [] if "extent" not in stac_collection.keys() else stac_collection["extent"]
+        )
+
         return stac_types.Collection(
             type="Collection",
-            id=settings.collection_delimiter.join([provider_id, stac_collection["id"]]),
+            id=id,
             stac_extensions=stac_extensions,
-            stac_version=stac_collection["stac_version"],
-            title=stac_collection["title"],
-            description=stac_collection["description"],
+            stac_version=stac_version,
+            title=title,
+            description=description,
             keywords=keywords,
-            license=stac_collection["license"],
-            providers=stac_collection["providers"],
-            summaries=stac_collection["summaries"],
-            extent=stac_collection["extent"],
+            license=license,
+            providers=providers,
+            summaries=summaries,
+            extent=extent,
             links=collection_links,
         )
 

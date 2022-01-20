@@ -1,16 +1,10 @@
 """API configuration."""
-from typing import List, Optional
+from typing import List
 
-from pydantic import BaseModel
-from pydantic.networks import AnyHttpUrl
 from stac_fastapi.types.config import ApiSettings
 
-
-class DataProvider(BaseModel):
-    identifier: str
-    name: str
-    stac_url: AnyHttpUrl
-    limit: Optional[int] = None
+from mqs import gocdb
+from mqs.types import data_provider
 
 
 class MqsSettings(ApiSettings):
@@ -20,29 +14,11 @@ class MqsSettings(ApiSettings):
         data_providers: list of C-SCALE data providers.
     """
 
+    title: str = "C-SCALE Metadata Query Service (MQS)"
+    description: str = "The Metadata Query Service (MQS) is the central entry point to query for metadata across the C-SCALE federation."
+    root_path: str = "/stac/v1"
     collection_delimiter: str = "|"
-
-    # TODO: use actual CSCALE data providers
-    data_providers: List[DataProvider] = [
-        {
-            "identifier": "earth-search",
-            "name": "Earth Search",
-            "stac_url": "https://earth-search.aws.element84.com/v0",
-            "limit": 748,
-        },
-        {
-            "identifier": "resto",
-            "name": "resto STAC",
-            "stac_url": "https://tamn.snapplanet.io",
-            "limit": 500,
-        },
-        {
-            "identifier": "ch",
-            "name": "Data Catalog of the Swiss Federal Spatial Data Infrastructure",
-            "stac_url": "https://data.geo.admin.ch/api/stac/v0.9",
-            "limit": 100,
-        },
-    ]
+    data_providers: List[data_provider.DataProvider] = gocdb.get_data_providers()
 
 
 settings = MqsSettings()

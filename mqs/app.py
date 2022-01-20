@@ -1,28 +1,41 @@
 """MQS STAC-FastAPI application"""
+from fastapi import FastAPI
 from stac_fastapi.api.app import StacApi
 from stac_fastapi.extensions.core import (
+    ContextExtension,
     FieldsExtension,
     QueryExtension,
     SortExtension,
-    ContextExtension,
 )
 
 from mqs.config import settings
 from mqs.core import CoreCrudClient
 from mqs.types.search import MqsSTACSearch
+from mqs.utils import custom_openapi
+from mqs.version import __version__ as mqs_version
 
+extensions = [
+    SortExtension(),
+    ContextExtension(),
+    # currently FieldsExtension and QueryExtension are not implemented
+]
 
 api = StacApi(
     settings=settings,
-    extensions=[
-        SortExtension(),
-        ContextExtension(),
-        # currently FieldsExtension and QueryExtension are not implemented
-    ],
+    title=settings.title,
+    description=settings.description,
+    extensions=extensions,
     client=CoreCrudClient(),
     search_request_model=MqsSTACSearch,
+    app=FastAPI(
+        root_path=settings.root_path,
+        openapi_url=settings.openapi_url,
+        servers=[{"url": settings.root_path}],
+    ),
 )
+
 app = api.app
+app.openapi = custom_openapi(api)
 
 
 def run():

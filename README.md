@@ -37,7 +37,7 @@ Or via Docker, e.g. by using the provided docker-compose setup file:
 docker-compose up
 ```
 
-By default, the MQS exposes the API on port 8000.
+By default, the MQS exposes the API on port 80.
 
 
 ## Contributing
