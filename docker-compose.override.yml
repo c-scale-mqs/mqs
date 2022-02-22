@@ -2,8 +2,28 @@ services:
 
   backend:
     ports:
-      - 80:80
-
-networks:
-  traefik-public:
-    external: false
+      - 8000:8000
+    volumes:
+      - .:/mqs
+    build:
+      context: ./
+      dockerfile: ./Dockerfile.dev
+    environment:
+      - APP_PORT=8000
+      - APP_HOST=0.0.0.0
+      - RELOAD=false
+    restart: always
+    command: bash -c "python -m mqs.app"
+    labels:
+      # Enable Traefik for this specific "backend" service
+      - traefik.enable=true
+      # Define the port inside of the Docker service to use
+      - traefik.http.services.mqs.loadbalancer.server.port=8000
+      # Make Traefik use this domain in HTTP
+      - traefik.http.routers.mqs-http.entrypoints=http
+      - "traefik.http.routers.mqs-http.rule=(Host(`localhost`) && PathPrefix(`/stac/v1`))"
+      # Use the traefik-public network (declared below)
+      - traefik.docker.network=traefik-public
+      # Strip stac prefix
+      - "traefik.http.middlewares.mqs-stripprefix.stripprefix.prefixes=/stac/v1"
+      - "traefik.http.middlewares.mqs-stripprefix.stripprefix.forceSlash=false"

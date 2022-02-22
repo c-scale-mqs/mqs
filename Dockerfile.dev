@@ -1,6 +1,6 @@
 
 # Image
-FROM continuumio/miniconda3:4.10.3-alpine AS build
+FROM continuumio/miniconda3 AS build
 
 ARG version
 ARG build_date
@@ -24,29 +24,22 @@ LABEL org.label-schema.docker.cmd=""
 ADD . /mqs
 WORKDIR /mqs
 
+SHELL ["/bin/bash", "-c"]
+
 # Create environment, install dependencies and package
 RUN conda config --set always_yes yes && \
     conda config --append channels conda-forge && \
     conda update -n base -c conda-forge conda && \
     conda env create -f ./environment.yml && \
     source activate cscale-mqs && \
-    pip install . && \
+    pip install -e .[dev] && \
     conda deactivate && \
     conda install -c conda-forge conda-pack && \
     conda clean -ity
 
-# Use conda pack for multi-staging
-RUN conda-pack -n cscale-mqs -o /tmp/env.tar && \
-    mkdir /cscale-mqs && cd /cscale-mqs && tar xf /tmp/env.tar && \
-    rm /tmp/env.tar
+RUN echo "source activate cscale-mqs" > ~/.bashrc
+ENV PATH="/opt/conda/envs/cscale-mqs/bin:$PATH"
 
-RUN /cscale-mqs/bin/conda-unpack
+# Make RUN commands use the cscale-mqs environment:
+SHELL ["conda", "run", "-n", "cscale-mqs", "/bin/bash", "-c"]
 
-FROM debian:buster-slim AS runtime
-
-COPY --from=build /cscale-mqs /cscale-mqs
-
-RUN echo "source /cscale-mqs/bin/activate" > ~/.bashrc
-ENV PATH="/cscale-mqs/bin:$PATH"
-
-SHELL ["/bin/bash", "-c"]

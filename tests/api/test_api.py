@@ -20,3 +20,17 @@ def test_core_router(api_client):
         [f"{list(route.methods)[0]} {route.path}" for route in api_client.app.routes]
     )
     assert not core_routes - api_routes
+
+
+def test_api_headers(app_client):
+    resp = app_client.get("/api")
+    assert resp.headers["content-type"] == "application/json"
+    assert resp.status_code == 200
+
+
+def test_conformance(app_client):
+    response = app_client.get("/conformance")
+    assert response.status_code == 200
+    assert list(response.json().keys())[0] == "conformsTo"
+
+

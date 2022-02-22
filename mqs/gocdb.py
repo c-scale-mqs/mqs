@@ -76,31 +76,11 @@ def get_data_providers() -> List[data_provider.DataProvider]:
     for site in sites:
         stac_url = get_stac_endpoint(site)
         if stac_url:
-            data_providers.append(
-                {"identifier": site, "name": site, "stac_url": stac_url}
+            stac_url_strip = (
+                stac_url.rstrip("/") if stac_url.endswith("/") else stac_url
             )
-
-    # # dummy_sites to be removed once actual CSCALE data providers STAC endpoints are available
-    # dummy_sites = [
-    #     {
-    #         "identifier": "earth-search",
-    #         "name": "Earth Search",
-    #         "stac_url": "https://earth-search.aws.element84.com/v0",
-    #         "limit": 748,
-    #     },
-    #     {
-    #         "identifier": "resto",
-    #         "name": "resto STAC",
-    #         "stac_url": "https://tamn.snapplanet.io",
-    #         "limit": 500,
-    #     },
-    #     {
-    #         "identifier": "ch",
-    #         "name": "Data Catalog of the Swiss Federal Spatial Data Infrastructure",
-    #         "stac_url": "https://data.geo.admin.ch/api/stac/v0.9",
-    #         "limit": 100,
-    #     },
-    # ]
-    # data_providers += dummy_sites
+            data_providers.append(
+                {"identifier": site, "name": site, "stac_url": stac_url_strip}
+            )
 
     return data_providers

@@ -7,8 +7,7 @@ from mqs.config import MqsSettings
 from mqs.core import CoreCrudClient
 from mqs.types.search import MqsSTACSearch
 from stac_fastapi.api.app import StacApi
-from stac_fastapi.extensions.core import (ContextExtension, FieldsExtension,
-                                          QueryExtension, SortExtension,
+from stac_fastapi.extensions.core import (ContextExtension, QueryExtension, SortExtension,
                                           TransactionExtension)
 from stac_fastapi.types.config import Settings
 from starlette.testclient import TestClient
