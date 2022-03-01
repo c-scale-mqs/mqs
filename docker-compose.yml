@@ -32,9 +32,17 @@ services:
       # Strip stac prefix
       - "traefik.http.middlewares.mqs-stripprefix.stripprefix.prefixes=/stac/v1"
       - "traefik.http.middlewares.mqs-stripprefix.stripprefix.forceSlash=false"
+      # Enable CORS 
+      - "traefik.http.middlewares.mqs-cors-headers.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE,HEAD"
+      - "traefik.http.middlewares.mqs-cors-headers.headers.accesscontrolalloworiginlistregex=.*"
+      - "traefik.http.middlewares.mqs-cors-headers.headers.accesscontrolmaxage=31536000"
+      - "traefik.http.middlewares.mqs-cors-headers.headers.addvaryheader=true"
+      - "traefik.http.middlewares.mqs-cors-headers.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.mqs-cors-headers.headers.accesscontrolallowheaders=Origin,DNT,If-Match,If-Modified-Since,If-None-Match,If-Range,If-Unmodified-Since,Content-Type,Www-Authenticate,Authorization"
+      - "traefik.http.middlewares.mqs-cors-headers.headers.accesscontrolexposeheaders=Location,Www-Authenticate,ETag,Expires,Last-Modified,Cache-Control,Content-Type"
       # Middleware to redirect HTTP to HTTPS
-      - "traefik.http.routers.mqs-http.middlewares=https-redirect,mqs-stripprefix"
-      - "traefik.http.routers.mqs-https.middlewares=mqs-stripprefix"
+      - "traefik.http.routers.mqs-http.middlewares=https-redirect,mqs-stripprefix,mqs-cors-headers"
+      - "traefik.http.routers.mqs-https.middlewares=mqs-stripprefix,mqs-cors-headers"
     networks:
       # Use the public network created to be shared between Traefik and
       # any other service that needs to be publicly available with HTTPS
