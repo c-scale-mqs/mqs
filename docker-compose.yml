@@ -9,7 +9,7 @@ services:
       #- ENVIRONMENT=local
       #- WEB_CONCURRENCY=1
     restart: always
-    command: bash -c "python -m mqs.app"
+    command: bash -c "export FORWARDED_ALLOW_IPS=${DOCKER_IP_TRAEFIK} && python -m mqs.app"
     labels:
       # Enable Traefik for this specific "backend" service
       - traefik.enable=true

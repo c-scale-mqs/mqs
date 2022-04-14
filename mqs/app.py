@@ -1,11 +1,13 @@
 """MQS STAC-FastAPI application"""
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from stac_fastapi.api.app import StacApi
+from stac_fastapi.api.models import create_get_request_model, create_post_request_model
 from stac_fastapi.extensions.core import (
     ContextExtension,
     FieldsExtension,
-    QueryExtension,
     SortExtension,
+    TokenPaginationExtension,
 )
 
 from mqs.config import settings
@@ -15,18 +17,25 @@ from mqs.utils import custom_openapi
 from mqs.version import __version__ as mqs_version
 
 extensions = [
-    SortExtension(),
-    ContextExtension(),
-    # currently FieldsExtension and QueryExtension are not implemented
+     SortExtension(),
+    # FieldsExtension(),
+     TokenPaginationExtension(),
+     ContextExtension(),
+    #
+    # currently no extensions are implemented
 ]
+get_request_model = create_get_request_model(extensions)
+post_request_model = create_post_request_model(extensions, base_model=MqsSTACSearch)
 
 api = StacApi(
     settings=settings,
     title=settings.title,
     description=settings.description,
     extensions=extensions,
-    client=CoreCrudClient(),
-    search_request_model=MqsSTACSearch,
+    client=CoreCrudClient(post_request_model=post_request_model),
+    response_class=ORJSONResponse,
+    search_get_request_model=get_request_model,
+    search_post_request_model=post_request_model,
     app=FastAPI(
         root_path=settings.root_path,
         openapi_url=settings.openapi_url,

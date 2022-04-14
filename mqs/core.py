@@ -87,7 +87,7 @@ class CoreCrudClient(BaseCoreClient):
                 provider_id=provider,
             )
 
-    def item_collection(self, id: str, limit: int = 10, **kwargs) -> ItemCollection:
+    def item_collection(self, collection_id: str, limit: int = 10, **kwargs) -> ItemCollection:
         """Read an item collection from the data providers."""
         response = request_collection(fastapi_request=kwargs["request"])
         base_url = str(kwargs["request"].base_url)
@@ -131,7 +131,7 @@ class CoreCrudClient(BaseCoreClient):
                         "type": "application/geo+json",
                         "href": "?".join(
                             [
-                                f"{kwargs['request'].base_url}collections/{id}/items",
+                                f"{kwargs['request'].base_url}collections/{collection_id}/items",
                                 next_query,
                             ]
                         ),
@@ -151,7 +151,7 @@ class CoreCrudClient(BaseCoreClient):
                         "type": "application/geo+json",
                         "href": "?".join(
                             [
-                                f"{kwargs['request'].base_url}collections/{id}/items",
+                                f"{kwargs['request'].base_url}collections/{collection_id}/items",
                                 previous_query,
                             ]
                         ),
