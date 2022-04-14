@@ -32,6 +32,7 @@ USERNAME=                                          # Traefik Dashboard user name
 PASSWORD=                                          # Traefik Dashboard password
 HASHED_PASSWORD=$(openssl passwd -apr1 $PASSWORD)  # Hashed password created via openssl
 EMAIL=                                             # Email to be registered with Let's Encrypt
+DOCKER_IP_TRAEFIK=                                 # Docker IP assigned to the traefik service
 
 # MQS App
 MQS_HOST=                                          # will be used like this: https://{MQS_HOST}/stac/v1
@@ -57,7 +58,7 @@ This package can also be installed locally into a [conda](https://docs.conda.io/
 # To install manually make sure to have miniconda installed!
 git clone git@github.com:c-scale-mqs/mqs.git
 cd mqs
-conda create -y -f ./environment.yml
+conda env create -f ./environment.yml
 
 conda activate cscale-mqs
 pip install .
@@ -89,7 +90,7 @@ By default, the MQS exposes the API on port 8000.
 
 For local development, an override docker-compose file for the MQS is provided. The package will be installed in development mode inside the container and all code changes will be reflected without the need to re-build the image.
 
-To get started use 
+To get started use
 
 ```bash
 docker-compose up --build
@@ -108,7 +109,9 @@ docker exec MQS_CONTAINER_NAME pytest
 where MQS_CONTAINER_NAME needs to be replaced with the actual name of the running container.
 
 ## Contributing
+
 Contributions are welcome!
 
 ## License
+
 [MIT](https://choosealicense.com/licenses/mit/)

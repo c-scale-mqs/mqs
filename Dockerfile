@@ -44,6 +44,8 @@ RUN /cscale-mqs/bin/conda-unpack
 
 FROM debian:buster-slim AS runtime
 
+RUN apt-get update && apt-get -y install libx11-6:amd64
+
 COPY --from=build /cscale-mqs /cscale-mqs
 
 RUN echo "source /cscale-mqs/bin/activate" > ~/.bashrc

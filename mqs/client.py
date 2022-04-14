@@ -1,9 +1,11 @@
 """http client management"""
 import asyncio
 import logging
+from turtle import ht
 import typing
-from datetime import datetime
-from typing import Dict, List, Optional, Set, Type, Union
+from functools import lru_cache, wraps
+from time import monotonic_ns
+from typing import Dict, Optional, Set, Type, Union
 from urllib.parse import urlparse, urlunparse
 
 import attr
@@ -22,6 +24,43 @@ logger = logging.getLogger(__name__)
 ResponseDictType = Dict[str, httpx.Response]
 
 # TODO: use async client
+
+
+
+# taken from https://gist.github.com/Morreski/c1d08a3afa4040815eafd3891e16b945
+def timed_lru_cache(
+    _func=None, *, seconds: int = 600, maxsize: int = 128, typed: bool = False
+):
+    """Extension of functools lru_cache with a timeout
+
+    Parameters:
+    seconds (int): Timeout in seconds to clear the WHOLE cache, default = 10 minutes
+    maxsize (int): Maximum Size of the Cache
+    typed (bool): Same value of different type will be a different entry
+
+    """
+
+    def wrapper_cache(f):
+        f = lru_cache(maxsize=maxsize, typed=typed)(f)
+        f.delta = seconds * 10 ** 9
+        f.expiration = monotonic_ns() + f.delta
+
+        @wraps(f)
+        def wrapped_f(*args, **kwargs):
+            if monotonic_ns() >= f.expiration:
+                f.cache_clear()
+                f.expiration = monotonic_ns() + f.delta
+            return f(*args, **kwargs)
+
+        wrapped_f.cache_info = f.cache_info
+        wrapped_f.cache_clear = f.cache_clear
+        return wrapped_f
+
+    # To allow decorator to be used without arguments
+    if _func is None:
+        return wrapper_cache
+    else:
+        return wrapper_cache(_func)
 
 
 def stac_request(
@@ -45,7 +84,7 @@ def stac_request(
         api_path = api_path[1:]
     elif api_path.startswith(settings.root_path):
         api_path = api_path.split(settings.root_path)[1]
-
+        
     api_params = ""
     api_query = (
         fastapi_request.url.query
@@ -53,7 +92,7 @@ def stac_request(
         else alternative_query
     )
     api_fragment = fastapi_request.url.fragment
-
+    
     api_url = {
         "scheme": api_scheme,
         "netloc": api_netloc,
@@ -71,18 +110,26 @@ def stac_request(
         json_data = None
 
     method = fastapi_request.method if not alternative_method else alternative_method
-
-    httpx_request = httpx.Request(
-        method=method,
-        url=urlunparse(api_url.values()),
-        json=json_data,
-    )
-
-    with httpx.Client() as client:
-        response = client.send(httpx_request)
-        return response
+    return _send_httpx_request(method=method, 
+                               url=urlunparse(api_url.values()),
+                               json=json_data)
 
 
+@timed_lru_cache(seconds=900)
+def _send_httpx_request(method, url, json) -> httpx.Response:
+    print(_send_httpx_request.cache_info())
+    httpx_request = httpx.Request(method=method, url=url, json=json, headers=httpx.Headers({'Connection': 'close'}))
+    try:
+        with httpx.Client() as client:
+            response = client.send(httpx_request)
+            return response  
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+             status_code=500,
+             detail=f"Error while requesting {exc.request.url!r}.",
+         )
+
+      
 def request_all(fastapi_request: Request) -> ResponseDictType:
     """Iterate through all data providers"""
     all_responses = {}
@@ -101,16 +148,16 @@ def request_collection(fastapi_request: Request) -> ResponseDictType:
     provider_id = ""
     data_providers = settings.data_providers
     try:
-        provider_id, _ = fastapi_request.path_params["collectionId"].split(
+        provider_id, _ = fastapi_request.path_params["collection_id"].split(
             settings.collection_delimiter
         )
     except ValueError:
         logger.warn(
-            f"collectionIds should be provided in the format dataproviderId{settings.collection_delimiter}collectionId"
+            f"collection_ids should be provided in the format dataproviderId{settings.collection_delimiter}collection_id"
         )
         # raise HTTPException(
         #     status_code=400,
-        #     detail=f"collectionIds must be provided in the format dataproviderId{settings.collection_delimiter}collectionId",
+        #     detail=f"collection_ids must be provided in the format dataproviderId{settings.collection_delimiter}collection_id",
         # )
 
     if provider_id != "":
