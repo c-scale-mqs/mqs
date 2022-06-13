@@ -115,9 +115,9 @@ def stac_request(
                                json=json_data)
 
 
-@timed_lru_cache(seconds=900)
+#@timed_lru_cache(seconds=900)
 def _send_httpx_request(method, url, json) -> httpx.Response:
-    print(_send_httpx_request.cache_info())
+    #print(_send_httpx_request.cache_info())
     httpx_request = httpx.Request(method=method, url=url, json=json, headers=httpx.Headers({'Connection': 'close'}))
     try:
         with httpx.Client() as client:
@@ -202,7 +202,7 @@ def request_search(
     all_responses = {}
     for data_provider in settings.data_providers:
         alternative_json = {k: v for k, v in fastapi_request._json.items()}
-        if data_provider.limit:
+        if data_provider.limit and not "limit" in alternative_json.keys():
             alternative_json["limit"] = data_provider.limit
         response = stac_request(
             fastapi_request=fastapi_request,
