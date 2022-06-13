@@ -215,7 +215,8 @@ class CoreCrudClient(BaseCoreClient):
         if sortby:
             # https://github.com/radiantearth/stac-api-spec/tree/master/item-search#sort
             sort_param = []
-            for sort in sortby:
+            for s in sortby:
+                sort = "+" + s if not s[0] in ("+", "-") else s
                 sort_param.append(
                     {
                         "field": sort[1:],
@@ -281,12 +282,11 @@ class CoreCrudClient(BaseCoreClient):
         search_request.collections = collections_stac
 
         # simplify request to core functions for now, i.e.,
-        # - ignore limit, will be set during the request
         # - ignore query, sortby, fields, (filter?), token
         kwargs["request"]._json = {
             k: v
             for k, v in search_request.dict().items()
-            if v and k in ("collections", "ids", "bbox", "datetime", "intersects")
+            if v and k in ("collections", "ids", "bbox", "datetime", "intersects", "limit")
         }
 
         response = request_search(fastapi_request=kwargs["request"])
@@ -311,7 +311,10 @@ class CoreCrudClient(BaseCoreClient):
             if "numberMatched" in itemcollection.json().keys():
                 total_count += itemcollection.json()["numberMatched"]
             elif "context" in itemcollection.json().keys():
-                total_count += itemcollection.json()["context"]["matched"]
+                if "matched" in itemcollection.json()["context"].keys():
+                    total_count += itemcollection.json()["context"]["matched"]
+                else:
+                    total_count += returned
             else:
                 total_count += returned
 
@@ -369,7 +372,7 @@ class CoreCrudClient(BaseCoreClient):
             context_obj = {
                 "returned": len(results),
                 "limit": search_request.limit,
-                "matched": total_count,
+                # "matched": total_count,             # removed for now, might be misleading if not real total count is returned
             }
 
         # Links

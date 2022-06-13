@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Features &mdash; mqs 0.1.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Data Access" href="dataaccess.html" />
+    <link rel="prev" title="C-SCALE Metadata Query Service (MQS)" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> mqs
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Features</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#browse-the-mqs">Browse the MQS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#list-all-collections">List all collections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#list-items-of-a-collection">List items of a Collection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stac-browser">STAC Browser</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#search-the-mqs">Search the MQS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#with-the-cli">With the CLI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#with-python">With Python</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dataaccess.html">Data Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation and Deployment</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mqs</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Features</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/features.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="features">
+<h1>Features<a class="headerlink" href="#features" title="Permalink to this heading"></a></h1>
+<p><strong>A concise overview of STAC-related features supported by the MQS.</strong></p>
+<p>The MQS represents an implementation of a STAC-compliant API. As such,
+it can be used to <em>browse</em> and <em>search</em> dynamic STAC Catalogs. It is
+very recommended to familiarize oneself with the official
+<a class="reference external" href="https://github.com/radiantearth/stac-api-spec">STAC API Specifications</a> to
+get a good understanding of the basic concepts. Additionally, playing with
+the provided <a class="reference external" href="https://stacspec.org/STAC-api.html">implementation</a> will
+immediatlely help in getting a better feeling for the provided functionality.</p>
+<section id="browse-the-mqs">
+<h2>Browse the MQS<a class="headerlink" href="#browse-the-mqs" title="Permalink to this heading"></a></h2>
+<p>The <a class="reference external" href="https://mqs.eodc.eu/stac/v1">MQS landing page</a> represents the entry
+point for users to browse the available Catalogs. It is itself a valid STAC
+Catalog containing links to Collections and other basic information.</p>
+<p>The MQS builds upon <a class="reference external" href="https://fastapi.tiangolo.com/">FastAPI</a>, a simple
+framework for building web APIs. One of the benefits of FastAPI is the
+automatic generation of documentation via the Swagger software. Swagger
+is a useful tool for helping users to get started with the API. The MQS
+docs are available at
+<a class="reference external" href="https://stac.eodc.eu/api/v1/docs">https://stac.eodc.eu/api/v1/docs</a>.</p>
+<section id="list-all-collections">
+<h3>List all collections<a class="headerlink" href="#list-all-collections" title="Permalink to this heading"></a></h3>
+<p>A first step in exploring the available datasets is checking out the Collections
+endpoint available at
+<a class="reference external" href="https://mqs.eodc.eu/stac/v1/collections">https://mqs.eodc.eu/stac/v1/collections</a>.
+It returns a list of STAC Collections from various data providers within the
+C-SCALE federation.</p>
+</section>
+<section id="list-items-of-a-collection">
+<h3>List items of a Collection<a class="headerlink" href="#list-items-of-a-collection" title="Permalink to this heading"></a></h3>
+<p>Make use of the items endpoint to look <em>inside</em> a specific STAC collection.
+For instance, to fetch features for the Sentinel-1 GRD Collection hosted by
+EODC, use the following link: <a class="reference external" href="https://mqs.eodc.eu/stac/v1/collections/EODC|sentinel1-grd">https://mqs.eodc.eu/stac/v1/collections/EODC|sentinel1-grd</a>.</p>
+</section>
+<section id="stac-browser">
+<h3>STAC Browser<a class="headerlink" href="#stac-browser" title="Permalink to this heading"></a></h3>
+<p>A great way of exploring STAC Catalogs is provided by the <a class="reference external" href="https://github.com/radiantearth/stac-browser">STAC Browser</a> utlity.
+It aims at providing a user-friendly and web-based visualization of STAC
+Catlogs directly within a web browser.</p>
+<p>Intended originally only for static Catalogs, i.e. purely JSON-file based
+without API functionality, the STAC Browser currently only provides minimal
+support for STAC APIs. Nonetheless, it already facilitates the discovery of
+available datasets by presenting easily readable metadata and data previews.
+For the MQS, the current version of the browser (v2.0.0) was installed and
+is available at <a class="reference external" href="https://mqs.eodc.eu/browser">https://mqs.eodc.eu/browser</a>.</p>
+<p>Note that for the next release of the software, the developers have promised
+a significantly more sophistacted interface and better support for APIs.
+Click
+<a class="reference external" href="https://radiantearth.github.io/stac-browser/#/external/mqs.eodc.eu/stac/v1">here</a> for a preview of this upcoming version of the STAC Browser
+displaying the MQS.</p>
+</section>
+</section>
+<section id="search-the-mqs">
+<h2>Search the MQS<a class="headerlink" href="#search-the-mqs" title="Permalink to this heading"></a></h2>
+<p>The benefit of using dynamic STAC implementations of the STAC specifications
+is primarily given by the possibility to search the Catalog with an API.</p>
+<p>There are many tools around for interacting with STAC APIs, tailored to
+facilitate the handling of STAC-specific objects like Collections
+or Items. Users can utilize these tools or choose any other software
+capable of working with HTTP APIs.</p>
+<p>A good overview of available tools can be found on the <a class="reference external" href="https://stacindex.org/ecosystem">STAC Ecosystem</a> website.</p>
+<p>Please note that the MQS currently only supports the <strong>core parameters</strong> for the
+STAC search.</p>
+<p>Those are:</p>
+<ul class="simple">
+<li><p>limit</p></li>
+<li><p>bbox</p></li>
+<li><p>datetime</p></li>
+<li><p>intersects</p></li>
+<li><p>ids</p></li>
+<li><p>collections</p></li>
+</ul>
+<p>See all details at the <a class="reference external" href="https://github.com/radiantearth/stac-api-spec/tree/master/item-search#query-parameter-table">STAC API spec github page</a>.</p>
+<section id="with-the-cli">
+<h3>With the CLI<a class="headerlink" href="#with-the-cli" title="Permalink to this heading"></a></h3>
+<p>For example, issue a POST request to the MQS search endpoint
+(<a class="reference external" href="https://mqs.eodc.eu/stac/v1/search">https://mqs.eodc.eu/stac/v1/search</a>)
+with cURL.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl --location --request POST <span class="s1">&#39;https://mqs.eodc.eu/stac/v1/search&#39;</span> <span class="se">\</span>
+--header <span class="s1">&#39;Content-Type: application/json&#39;</span> <span class="se">\</span>
+--data-raw <span class="s1">&#39;{</span>
+<span class="s1">    &quot;collections&quot;: [</span>
+<span class="s1">        &quot;EODC|sentinel1-grd&quot;</span>
+<span class="s1">    ],</span>
+<span class="s1">    &quot;datetime&quot;: &quot;2022-04-01T00:00:00Z/..&quot;</span>
+<span class="s1">}&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="with-python">
+<h3>With Python<a class="headerlink" href="#with-python" title="Permalink to this heading"></a></h3>
+<p>For example, use the
+<a class="reference external" href="https://github.com/stac-utils/pystac-client">PySTAC Client</a>
+in Python to interface with the MQS.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pystac_client</span> <span class="kn">import</span> <span class="n">Client</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mqs</span> <span class="o">=</span> <span class="n">Client</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;https://mqs.eodc.eu/stac/v1&quot;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">collection</span> <span class="ow">in</span> <span class="n">mqs</span><span class="o">.</span><span class="n">get_all_collections</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span>
+
+<span class="go">&lt;CollectionClient id=EODC|sentinel1-grd&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:CGS_S1_GRD_L1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:CGS_S1_GRD_SIGMA0_L1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:CGS_S1_SLC_L1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:CGS_S2_L1C&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:COP_DEM_GLO_30M_COG&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:COP_DEM_GLO_90M_COG&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:ESA_WorldCover_10m_2020_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:ESA_WorldCover_S1VVVHratio_10m_2020_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:ESA_WorldCover_S2RGBNIR_10m_2020_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S1_SLC_COHERENCE_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_CCC_V2&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_CHL_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_CWC_V2&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_FCOVER_V2&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_LAI_V2&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_NDVI_V2&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_RHOW_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_SPM_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_TOC_V2&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S2_TUR_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S5P_L3_CO_TD_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S5P_L3_CO_TM_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S5P_L3_CO_TY_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S5P_L3_NO2_TD_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S5P_L3_NO2_TM_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:eop:VITO:TERRASCOPE_S5P_L3_NO2_TY_V1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:ogc:def:EOP:VITO:PROBAV_S1-TOC_333M_V001&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:ogc:def:EOP:VITO:PROBAV_S10-TOC_333M_V001&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:ogc:def:EOP:VITO:PROBAV_S5-TOC_100M_V001&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:ogc:def:EOP:VITO:VGT_P&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:ogc:def:EOP:VITO:VGT_S1&gt;</span>
+<span class="go">&lt;CollectionClient id=VITO|urn:ogc:def:EOP:VITO:VGT_S10&gt;</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="C-SCALE Metadata Query Service (MQS)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dataaccess.html" class="btn btn-neutral float-right" title="Data Access" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, c-scale.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

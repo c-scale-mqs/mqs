@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation and Deployment &mdash; mqs 0.1.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="C-SCALE Metadata Query Service (MQS)" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> mqs
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation and Deployment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prerequesites">Prerequesites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#start-the-stack">Start the Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#local-installation">Local Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#local-usage">Local Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#local-development">Local Development</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testing">Testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#contributing">Contributing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mqs</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Installation and Deployment</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation-and-deployment">
+<h1>Installation and Deployment<a class="headerlink" href="#installation-and-deployment" title="Permalink to this heading"></a></h1>
+<p><strong>Note that this installation guide is only of interest to those who would
+like to contribute or host this service. Regular users of the MQS do not
+need to familiarize themselves with the installation procedure and can
+skip this chapter.</strong></p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
+<p>The package contains the following docker-compose files to allow for a
+quick deployment on any server.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">docker-compose.traefik.yml</span></code>: sets up a Traefik instance and takes
+care about HTTPS certificates, reverse proxying and load balancing.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docker-compose.yml</span></code>: installs and starts the MQS app in a Docker
+container.</p></li>
+</ul>
+<p>Note that the deployment setup is based on
+<a class="reference external" href="https://github.com/tiangolo">tiangolo</a>’s guide on <a class="reference external" href="https://dev.to/tiangolo/deploying-fastapi-and-other-apps-with-https-powered-by-traefik-5dik">how to deploy
+fastapi apps with
+https</a>.</p>
+</section>
+<section id="prerequesites">
+<h2>Prerequesites<a class="headerlink" href="#prerequesites" title="Permalink to this heading"></a></h2>
+<p>A working installation of
+<a class="reference external" href="https://docs.docker.com/get-docker/">Docker</a> and <a class="reference external" href="https://docs.docker.com/compose/install/">Docker
+Compose</a> is required.</p>
+<p>Furthermore, the Docker network specified in the docker-compose files
+needs to be created before building the Docker containers. The exact
+command depends on your network infrastructure, but might be as simple
+as</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker network create mqs01
+</pre></div>
+</div>
+<p>Additionally, the following environment variables need to be set:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Traefik</span>
+<span class="nv">USERNAME</span><span class="o">=</span>                                          <span class="c1"># Traefik Dashboard user name</span>
+<span class="nv">PASSWORD</span><span class="o">=</span>                                          <span class="c1"># Traefik Dashboard password</span>
+<span class="nv">HASHED_PASSWORD</span><span class="o">=</span><span class="k">$(</span>openssl passwd -apr1 <span class="nv">$PASSWORD</span><span class="k">)</span>  <span class="c1"># Hashed password created via openssl</span>
+<span class="nv">EMAIL</span><span class="o">=</span>                                             <span class="c1"># Email to be registered with Let&#39;s Encrypt</span>
+<span class="nv">DOCKER_IP_TRAEFIK</span><span class="o">=</span>                                 <span class="c1"># Docker IP assigned to the traefik service</span>
+
+<span class="c1"># MQS App</span>
+<span class="nv">MQS_HOST</span><span class="o">=</span>                                          <span class="c1"># will be used like this: https://{MQS_HOST}/stac/v1</span>
+<span class="nv">MQS_PORT</span><span class="o">=</span>                                          <span class="c1"># port inside the container.</span>
+</pre></div>
+</div>
+</section>
+<section id="start-the-stack">
+<h2>Start the Stack<a class="headerlink" href="#start-the-stack" title="Permalink to this heading"></a></h2>
+<p>If all requirements are met, the Traefik and MQS containers can be
+started via <code class="docutils literal notranslate"><span class="pre">docker-compose</span> <span class="pre">up</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose -f docker-compose.traefik.yml up -d
+docker-compose -f docker-compose.yml up -d
+</pre></div>
+</div>
+<p>The MQS app should then be available at <code class="docutils literal notranslate"><span class="pre">https://{MQS_HOST}/stac/v1</span></code>.</p>
+</section>
+<section id="local-installation">
+<h2>Local Installation<a class="headerlink" href="#local-installation" title="Permalink to this heading"></a></h2>
+<p>This package can also be installed locally into a
+<a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">conda</a> environment
+using the provided environment file.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># To install manually make sure to have miniconda installed!</span>
+git clone git@github.com:c-scale-mqs/mqs.git
+<span class="nb">cd</span> mqs
+conda env create -f ./environment.yml
+
+conda activate cscale-mqs
+pip install .
+</pre></div>
+</div>
+<p>Or it can be built via the provided Dockerfile.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker build -t eodc/mqs .
+</pre></div>
+</div>
+</section>
+<section id="local-usage">
+<h2>Local Usage<a class="headerlink" href="#local-usage" title="Permalink to this heading"></a></h2>
+<p>The API can then be started via</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m mqs.app
+</pre></div>
+</div>
+<p>Or via Docker, e.g. by using the provided docker-compose setup file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose up
+</pre></div>
+</div>
+<p>By default, the MQS exposes the API on port 8000.</p>
+<section id="local-development">
+<h3>Local Development<a class="headerlink" href="#local-development" title="Permalink to this heading"></a></h3>
+<p>For local development, an override docker-compose file for the MQS is
+provided. The package will be installed in development mode inside the
+container and all code changes will be reflected without the need to
+re-build the image.</p>
+<p>To get started use</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker-compose up --build
+</pre></div>
+</div>
+<p>without the <code class="docutils literal notranslate"><span class="pre">-f</span></code> option!</p>
+</section>
+<section id="testing">
+<h3>Testing<a class="headerlink" href="#testing" title="Permalink to this heading"></a></h3>
+<p>The tests inside the MQS container started in development mode can be
+executed via</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker <span class="nb">exec</span> MQS_CONTAINER_NAME pytest
+</pre></div>
+</div>
+<p>where MQS_CONTAINER_NAME needs to be replaced with the actual name of
+the running container.</p>
+</section>
+<section id="contributing">
+<h3>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading"></a></h3>
+<p>Contributions are welcome!</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="C-SCALE Metadata Query Service (MQS)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, c-scale.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
