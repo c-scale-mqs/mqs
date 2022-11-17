@@ -27,6 +27,9 @@ A growing list of software packages and tools to interact with
 STAC APIs supporting various programming languages can be found on 
 the `STAC Ecosystem <https://stacindex.org/ecosystem>`__ website.
 
+A good starting point for getting acquainted with the MQS and the STAC Catalogs available 
+through the MQS is the STAC Browser: `https://mqs.eodc.eu/browser <https://mqs.eodc.eu/browser>`__. 
+
 More information about C-SCALE, the contributing data providers and 
 available datasets can be found on 
 the `C-SCALE Wiki <https://wiki.c-scale.eu/C-SCALE>`__.
