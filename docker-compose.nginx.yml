@@ -1,0 +1,37 @@
+version: '3'
+services:
+
+  nginx:
+    container_name: nginx-help
+    image: nginx:latest
+    volumes:
+      - ./docs/build/html:/usr/share/nginx/html/help:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.stac-help.loadbalancer.server.port=80
+      - traefik.http.routers.stac-help-http.entrypoints=http
+      - "traefik.http.routers.stac-help-http.rule=(Host(`${MQS_HOST}`) && PathPrefix(`/help`))"
+      - traefik.docker.network=mqs01
+      - traefik.http.routers.stac-help-https.entrypoints=https
+      - "traefik.http.routers.stac-help-https.rule=(Host(`${MQS_HOST}`) && PathPrefix(`/help`))"
+      - traefik.http.routers.stac-help-https.tls=true
+      - traefik.http.routers.stac-help-https.tls.certresolver=le
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+      - "traefik.http.middlewares.stac-help-stripprefix.stripprefix.prefixes=/help"
+      - "traefik.http.middlewares.stac-help-stripprefix.stripprefix.forceSlash=false"
+      - "traefik.http.middlewares.stac-help-cors-headers.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE,HEAD"
+      - "traefik.http.middlewares.stac-help-cors-headers.headers.accesscontrolalloworiginlistregex=.*"
+      - "traefik.http.middlewares.stac-help-cors-headers.headers.accesscontrolmaxage=31536000"
+      - "traefik.http.middlewares.stac-help-cors-headers.headers.addvaryheader=true"
+      - "traefik.http.middlewares.stac-help-cors-headers.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.stac-help-cors-headers.headers.accesscontrolallowheaders=Origin,DNT,If-Match,If-Modified-Since,If-None-Match,If-Range,If-Unmodified-Since,Content-Type,Www-Authenticate,Authorization"
+      - "traefik.http.middlewares.stac-help-cors-headers.headers.accesscontrolexposeheaders=Location,Www-Authenticate,ETag,Expires,Last-Modified,Cache-Control,Content-Type"
+      - "traefik.http.routers.stac-help-http.middlewares=https-redirect,stac-help-cors-headers"
+      - "traefik.http.routers.stac-help-https.middlewares=stac-help-cors-headers"
+    networks:
+      - mqs01
+
+networks:
+  mqs01:
+    external: true
