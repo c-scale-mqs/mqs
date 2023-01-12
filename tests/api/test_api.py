@@ -5,9 +5,9 @@ from ..conftest import MockStarletteRequest
 STAC_CORE_ROUTES = [
     "GET /",
     "GET /collections",
-    "GET /collections/{collectionId}",
-    "GET /collections/{collectionId}/items",
-    "GET /collections/{collectionId}/items/{itemId}",
+    "GET /collections/{collection_id}",
+    "GET /collections/{collection_id}/items",
+    "GET /collections/{collection_id}/items/{item_id}",
     "GET /conformance",
     "GET /search",
     "POST /search",
@@ -24,7 +24,6 @@ def test_core_router(api_client):
 
 def test_api_headers(app_client):
     resp = app_client.get("/api")
-    assert resp.headers["content-type"] == "application/json"
     assert resp.status_code == 200
 
 

@@ -89,3 +89,4 @@ MANIFEST
 .venv*/
 .conda*/
 
+.devcontainer/devcontainer.json

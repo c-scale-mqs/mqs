@@ -7,8 +7,14 @@ from mqs.config import MqsSettings
 from mqs.core import CoreCrudClient
 from mqs.types.search import MqsSTACSearch
 from stac_fastapi.api.app import StacApi
-from stac_fastapi.extensions.core import (ContextExtension, QueryExtension, SortExtension,
-                                          TransactionExtension)
+from stac_fastapi.api.models import create_get_request_model, create_post_request_model
+from stac_fastapi.extensions.core import (
+    ContextExtension,
+    FieldsExtension,
+    SortExtension,
+    TokenPaginationExtension,
+)
+from fastapi.responses import ORJSONResponse
 from stac_fastapi.types.config import Settings
 from starlette.testclient import TestClient
 
@@ -23,6 +29,13 @@ class TestSettings(MqsSettings):
 settings = TestSettings()
 Settings.set(settings)
 
+extensions = [
+     SortExtension(),
+     TokenPaginationExtension(),
+     ContextExtension(),    
+]
+get_request_model = create_get_request_model(extensions)
+post_request_model = create_post_request_model(extensions, base_model=MqsSTACSearch)
 
 @pytest.fixture
 def load_test_data() -> Callable[[str], Dict]:
@@ -42,9 +55,11 @@ def api_client():
     settings = MqsSettings()
     return StacApi(
         settings=settings,
-        client=CoreCrudClient(),
-        extensions=[ContextExtension(), SortExtension()],
-        search_request_model=MqsSTACSearch,
+        client=CoreCrudClient(post_request_model=create_post_request_model(extensions, base_model=MqsSTACSearch)),
+        response_class=ORJSONResponse,
+        extensions=extensions,
+        search_get_request_model=get_request_model,
+        search_post_request_model=post_request_model,
     )
 
 
