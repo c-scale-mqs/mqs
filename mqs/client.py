@@ -17,6 +17,7 @@ from stac_fastapi.types.stac import Collection, Collections, Item, ItemCollectio
 from stac_pydantic.links import Relations
 
 from mqs.config import settings
+from mqs.routers.data_providers import read_data_providers
 from mqs import gocdb
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,6 @@ logger = logging.getLogger(__name__)
 ResponseDictType = Dict[str, httpx.Response]
 
 # TODO: use async client
-
 
 
 # taken from https://gist.github.com/Morreski/c1d08a3afa4040815eafd3891e16b945
@@ -42,7 +42,7 @@ def timed_lru_cache(
 
     def wrapper_cache(f):
         f = lru_cache(maxsize=maxsize, typed=typed)(f)
-        f.delta = seconds * 10 ** 9
+        f.delta = seconds * 10**9
         f.expiration = monotonic_ns() + f.delta
 
         @wraps(f)
@@ -71,7 +71,6 @@ def stac_request(
     alternative_method: Optional[str] = None,
     alternative_json: Optional[dict] = None,
 ) -> httpx.Response:
-
     api_scheme = external_stac_url.scheme
     api_netloc = (
         external_stac_url.host
@@ -84,7 +83,7 @@ def stac_request(
         api_path = api_path[1:]
     elif api_path.startswith(settings.root_path):
         api_path = api_path.split(settings.root_path)[1]
-        
+
     api_params = ""
     api_query = (
         fastapi_request.url.query
@@ -92,7 +91,7 @@ def stac_request(
         else alternative_query
     )
     api_fragment = fastapi_request.url.fragment
-    
+
     api_url = {
         "scheme": api_scheme,
         "netloc": api_netloc,
@@ -110,35 +109,41 @@ def stac_request(
         json_data = None
 
     method = fastapi_request.method if not alternative_method else alternative_method
-    return _send_httpx_request(method=method, 
-                               url=urlunparse(api_url.values()),
-                               json=json_data)
+    return _send_httpx_request(
+        method=method, url=urlunparse(api_url.values()), json=json_data
+    )
 
 
-#@timed_lru_cache(seconds=900)
+# @timed_lru_cache(seconds=900)
 def _send_httpx_request(method, url, json) -> httpx.Response:
-    #print(_send_httpx_request.cache_info())
-    httpx_request = httpx.Request(method=method, url=url, json=json, headers=httpx.Headers({'Connection': 'close'}))
+    # print(_send_httpx_request.cache_info())
+    httpx_request = httpx.Request(
+        method=method,
+        url=url,
+        json=json,
+        headers=httpx.Headers({"Connection": "close"}),
+    )
     try:
         with httpx.Client() as client:
             response = client.send(httpx_request)
-            return response  
+            return response
     except httpx.HTTPError as exc:
         raise HTTPException(
-             status_code=500,
-             detail=f"Error while requesting {exc.request.url!r}.",
-         )
+            status_code=500,
+            detail=f"Error while requesting {exc.request.url!r}.",
+        )
 
-      
+
 def request_all(fastapi_request: Request) -> ResponseDictType:
     """Iterate through all data providers"""
     all_responses = {}
-    for data_provider in settings.data_providers:
-        response = stac_request(
-            fastapi_request=fastapi_request,
-            external_stac_url=data_provider.stac_url,
-            alternative_path="/collections",
-        )
+    for data_provider in read_data_providers():
+        if data_provider.is_online():
+            response = stac_request(
+                fastapi_request=fastapi_request,
+                external_stac_url=data_provider.stac_url,
+                alternative_path="/collections",
+            )
         all_responses[data_provider.identifier] = response
     return all_responses
 
@@ -146,7 +151,7 @@ def request_all(fastapi_request: Request) -> ResponseDictType:
 def request_collection(fastapi_request: Request) -> ResponseDictType:
     """Iterate through all data providers"""
     provider_id = ""
-    data_providers = settings.data_providers
+    data_providers = read_data_providers()
     try:
         provider_id, _ = fastapi_request.path_params["collection_id"].split(
             settings.collection_delimiter
@@ -163,15 +168,17 @@ def request_collection(fastapi_request: Request) -> ResponseDictType:
     if provider_id != "":
         try:
             data_providers = [
-                dp for dp in settings.data_providers if dp.identifier == provider_id
+                dp for dp in read_data_providers() if dp.identifier == provider_id
             ]
-            data_providers[0]
+            data_providers[0].is_online()
         except IndexError:
             raise HTTPException(
                 status_code=404, detail=f"Unknown data provider with id {provider_id}"
             )
 
     for data_provider in data_providers:
+        if not data_provider.is_online():
+            continue
         response = stac_request(
             fastapi_request=fastapi_request,
             external_stac_url=data_provider.stac_url,
@@ -200,7 +207,9 @@ def request_search(
     if recursive:
         return _recursive_search(fastapi_request=fastapi_request)
     all_responses = {}
-    for data_provider in settings.data_providers:
+    for data_provider in read_data_providers():
+        if not data_provider.is_online():
+            continue
         alternative_json = {k: v for k, v in fastapi_request._json.items()}
         if data_provider.limit and not "limit" in alternative_json.keys():
             alternative_json["limit"] = data_provider.limit
@@ -220,7 +229,9 @@ def request_search(
 def _recursive_search(fastapi_request: Request) -> ResponseDictType:
     """Further iterate through all links"""
     all_responses = {}
-    for data_provider in settings.data_providers:
+    for data_provider in read_data_providers():
+        if not data_provider.is_online():
+            continue
         # initial response
         alternative_json = {k: v for k, v in fastapi_request._json.items()}
         if data_provider.limit:

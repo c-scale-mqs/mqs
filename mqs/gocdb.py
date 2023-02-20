@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 def get_site_list() -> OrderedDict:
-
     httpx_request = httpx.Request(
         method="GET",
         url="https://goc.egi.eu/gocdbpi/public/?method=get_site_list&scope=C-SCALE",
@@ -25,7 +24,6 @@ def get_site_list() -> OrderedDict:
 
 
 def get_site_names() -> List[str]:
-
     sites = []
     r = get_site_list()
     for site in r["results"]["SITE"]:
@@ -34,7 +32,6 @@ def get_site_names() -> List[str]:
 
 
 def get_service_endpoint(site: str) -> OrderedDict:
-
     url = f"https://goc.egi.eu/gocdbpi/public/?method=get_service_endpoint&sitename={site}"
 
     httpx_request = httpx.Request(
@@ -48,7 +45,6 @@ def get_service_endpoint(site: str) -> OrderedDict:
 
 
 def get_stac_endpoint(site: str) -> AnyHttpUrl:
-
     r = get_service_endpoint(site)
 
     try:
@@ -70,7 +66,6 @@ def _dict2list(d: OrderedDict) -> List[OrderedDict]:
 
 
 def get_data_providers() -> List[data_provider.DataProvider]:
-
     data_providers = []
     sites = get_site_names()
     for site in sites:
@@ -80,7 +75,13 @@ def get_data_providers() -> List[data_provider.DataProvider]:
                 stac_url.rstrip("/") if stac_url.endswith("/") else stac_url
             )
             data_providers.append(
-                {"identifier": site, "name": site, "stac_url": stac_url_strip}
+                data_provider.DataProvider(
+                    **{
+                        "identifier": site,
+                        "name": site,
+                        "stac_url": stac_url_strip,
+                    }
+                )
             )
-
+            data_providers[-1].is_online()
     return data_providers

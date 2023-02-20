@@ -12,23 +12,23 @@ from stac_fastapi.extensions.core import (
 
 from mqs.config import settings
 from mqs.core import CoreCrudClient
+from mqs.routers.data_providers import router as gocdb_router
 from mqs.types.search import MqsSTACSearch
 from mqs.utils import custom_openapi
 from mqs.version import __version__ as mqs_version
 
 extensions = [
-     SortExtension(),
-    # FieldsExtension(),
-     TokenPaginationExtension(),
-     ContextExtension(),
-    #
-    # currently no extensions are implemented
+    SortExtension(),
+    TokenPaginationExtension(),
+    ContextExtension()  # Note: deprecated in January 2023
+    # FieldsExtension(), # currently deactivated
 ]
 get_request_model = create_get_request_model(extensions)
 post_request_model = create_post_request_model(extensions, base_model=MqsSTACSearch)
 
 api = StacApi(
     settings=settings,
+    api_version=mqs_version,
     title=settings.title,
     description=settings.description,
     extensions=extensions,
@@ -45,6 +45,7 @@ api = StacApi(
 
 app = api.app
 app.openapi = custom_openapi(api)
+app.include_router(gocdb_router)
 
 
 def run():
