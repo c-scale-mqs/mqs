@@ -2,7 +2,7 @@ Installation and Deployment
 ===========================
 
 **Note that this installation guide is only of interest to those who would 
-like to contribute or host this service. Regular users of the MQS do not 
+like to contribute or host this service. Regular users of the EO-MQS do not 
 need to familiarize themselves with the installation procedure and can 
 skip this chapter.**
 
@@ -14,7 +14,7 @@ quick deployment on any server.
 
 -  ``docker-compose.traefik.yml``: sets up a Traefik instance and takes
    care about HTTPS certificates, reverse proxying and load balancing.
--  ``docker-compose.yml``: installs and starts the MQS app in a Docker
+-  ``docker-compose.yml``: installs and starts the EO-MQS app in a Docker
    container.
 
 Note that the deployment setup is based on
@@ -49,14 +49,14 @@ Additionally, the following environment variables need to be set:
    EMAIL=                                             # Email to be registered with Let's Encrypt
    DOCKER_IP_TRAEFIK=                                 # Docker IP assigned to the traefik service
 
-   # MQS App
+   # EO-MQS App
    MQS_HOST=                                          # will be used like this: https://{MQS_HOST}/stac/v1
    MQS_PORT=                                          # port inside the container.
 
 Start the Stack
 ~~~~~~~~~~~~~~~
 
-If all requirements are met, the Traefik and MQS containers can be
+If all requirements are met, the Traefik and EO-MQS containers can be
 started via ``docker-compose up``:
 
 .. code:: bash
@@ -64,7 +64,7 @@ started via ``docker-compose up``:
    docker-compose -f docker-compose.traefik.yml up -d
    docker-compose -f docker-compose.yml up -d
 
-The MQS app should then be available at ``https://{MQS_HOST}/stac/v1``.
+The MQS app should then be available at ``https://{EO-MQS_HOST}/stac/v1``.
 
 Local Installation
 ~~~~~~~~~~~~~~~~~~
@@ -105,12 +105,12 @@ Or via Docker, e.g. by using the provided docker-compose setup file:
 
    docker-compose up
 
-By default, the MQS exposes the API on port 8000.
+By default, the EO-MQS exposes the API on port 8000.
 
 Local Development
 -----------------
 
-For local development, an override docker-compose file for the MQS is
+For local development, an override docker-compose file for the EO-MQS is
 provided. The package will be installed in development mode inside the
 container and all code changes will be reflected without the need to
 re-build the image.
@@ -126,14 +126,14 @@ without the ``-f`` option!
 Testing
 -------
 
-The tests inside the MQS container started in development mode can be
+The tests inside the EO-MQS container started in development mode can be
 executed via
 
 .. code:: bash
 
    docker exec MQS_CONTAINER_NAME pytest
 
-where MQS_CONTAINER_NAME needs to be replaced with the actual name of
+where EO-MQS_CONTAINER_NAME needs to be replaced with the actual name of
 the running container.
 
 Contributing

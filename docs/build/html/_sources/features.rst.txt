@@ -1,9 +1,9 @@
 Features
 ========
 
-**A concise overview of STAC-related features supported by the MQS.**
+**A concise overview of STAC-related features supported by the EO-MQS.**
 
-The MQS represents an implementation of a STAC-compliant API. As such, 
+The EO-MQS represents an implementation of a STAC-compliant API. As such, 
 it can be used to *browse* and *search* dynamic STAC Catalogs. It is 
 very recommended to familiarize oneself with the official 
 `STAC API Specifications <https://github.com/radiantearth/stac-api-spec>`__ to 
@@ -12,17 +12,17 @@ the provided `implementation <https://stacspec.org/STAC-api.html>`__ will
 immediatlely help in getting a better feeling for the provided functionality.
 
 
-Browse the MQS
---------------
+Browse the EO-MQS
+-----------------
 
-The `MQS landing page <https://mqs.eodc.eu/stac/v1>`__ represents the entry 
+The `EO-MQS landing page <https://mqs.eodc.eu/stac/v1>`__ represents the entry 
 point for users to browse the available Catalogs. It is itself a valid STAC 
 Catalog containing links to Collections and other basic information. 
 
-The MQS builds upon `FastAPI <https://fastapi.tiangolo.com/>`__, a simple 
+The EO-MQS builds upon `FastAPI <https://fastapi.tiangolo.com/>`__, a simple 
 framework for building web APIs. One of the benefits of FastAPI is the 
 automatic generation of documentation via the Swagger software. Swagger 
-is a useful tool for helping users to get started with the API. The MQS 
+is a useful tool for helping users to get started with the API. The EO-MQS 
 docs are available at 
 `https://stac.eodc.eu/api/v1/docs <https://stac.eodc.eu/api/v1/docs>`__.
 
@@ -53,18 +53,18 @@ Intended originally only for static Catalogs, i.e. purely JSON-file based
 without API functionality, the STAC Browser currently only provides minimal 
 support for STAC APIs. Nonetheless, it already facilitates the discovery of
 available datasets by presenting easily readable metadata and data previews.
-For the MQS, the current version of the browser (v2.0.0) was installed and 
+For the EO-MQS, the current version of the browser (v2.0.0) was installed and 
 is available at `https://mqs.eodc.eu/browser <https://mqs.eodc.eu/browser>`__.
 
 Note that for the next release of the software, the developers have promised
 a significantly more sophistacted interface and better support for APIs.
 Click 
 `here <https://radiantearth.github.io/stac-browser/#/external/mqs.eodc.eu/stac/v1>`__ for a preview of this upcoming version of the STAC Browser 
-displaying the MQS.
+displaying the EO-MQS.
 
 
-Search the MQS
---------------
+Search the EO-MQS
+-----------------
 
 The benefit of using dynamic STAC implementations of the STAC specifications 
 is primarily given by the possibility to search the Catalog with an API.
@@ -76,7 +76,7 @@ capable of working with HTTP APIs.
 
 A good overview of available tools can be found on the `STAC Ecosystem <https://stacindex.org/ecosystem>`__ website.
 
-Please note that the MQS currently only supports the **core parameters** for the 
+Please note that the EO-MQS currently only supports the **core parameters** for the 
 STAC search. 
 
 Those are:
@@ -94,7 +94,7 @@ See all details at the `STAC API spec github page
 With the CLI 
 ~~~~~~~~~~~~
 
-For example, issue a POST request to the MQS search endpoint 
+For example, issue a POST request to the EO-MQS search endpoint 
 (`https://mqs.eodc.eu/stac/v1/search <https://mqs.eodc.eu/stac/v1/search>`__)
 with cURL.
 
@@ -116,7 +116,7 @@ With Python
 
 For example, use the 
 `PySTAC Client <https://github.com/stac-utils/pystac-client>`__ 
-in Python to interface with the MQS.
+in Python to interface with the EO-MQS.
 
 
 .. code-block:: python

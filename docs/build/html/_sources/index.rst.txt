@@ -1,4 +1,4 @@
-.. mqs documentation master file, created by
+.. eo-mqs documentation master file, created by
    sphinx-quickstart on Fri Jun 10 11:36:43 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -6,10 +6,10 @@
 .. role:: raw-html(raw)
     :format: html
 
-C-SCALE Metadata Query Service (MQS)
-====================================
+C-SCALE Earth Observation Metadata Query Service (EO-MQS)
+=========================================================
 
-**The MQS is a STAC-compliant FastAPI application and the central
+**The EO-MQS is a STAC-compliant FastAPI application and the central
 interface to query and identify Copernicus data distributed across
 partners within the C-SCALE data federation.**
 
@@ -27,8 +27,8 @@ A growing list of software packages and tools to interact with
 STAC APIs supporting various programming languages can be found on 
 the `STAC Ecosystem <https://stacindex.org/ecosystem>`__ website.
 
-A good starting point for getting acquainted with the MQS and the STAC Catalogs available 
-through the MQS is the STAC Browser: `https://mqs.eodc.eu/browser <https://mqs.eodc.eu/browser>`__. 
+A good starting point for getting acquainted with the EO-MQS and the STAC Catalogs available 
+through the EO-MQS is the STAC Browser: `https://mqs.eodc.eu/browser <https://mqs.eodc.eu/browser>`__. 
 
 More information about C-SCALE, the contributing data providers and 
 available datasets can be found on 

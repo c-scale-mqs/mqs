@@ -1,7 +1,7 @@
 Data Access
 ===========
 
-**Example usages to search and use metadata to access data via the MQS.**
+**Example usages to search and use metadata to access data via the EO-MQS.**
 
 Please note that this is still work in progress.
 
