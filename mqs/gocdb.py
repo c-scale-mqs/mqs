@@ -71,15 +71,15 @@ def get_data_providers() -> List[data_provider.DataProvider]:
     for site in sites:
         stac_url = get_stac_endpoint(site)
         if stac_url:
-            stac_url_strip = (
-                stac_url.rstrip("/") if stac_url.endswith("/") else stac_url
-            )
+            # stac_url_strip = (
+            #     stac_url.rstrip("/") if stac_url.endswith("/") else stac_url
+            # )
             data_providers.append(
                 data_provider.DataProvider(
                     **{
                         "identifier": site,
                         "name": site,
-                        "stac_url": stac_url_strip,
+                        "stac_url": stac_url,
                     }
                 )
             )

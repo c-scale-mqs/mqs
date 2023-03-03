@@ -12,7 +12,13 @@ import attr
 from fastapi import HTTPException
 from pydantic import ValidationError
 from stac_fastapi.types.core import AsyncBaseCoreClient, BaseCoreClient
-from stac_fastapi.types.stac import Collection, Collections, Item, ItemCollection
+from stac_fastapi.types.stac import (
+    Collection,
+    Collections,
+    Item,
+    ItemCollection,
+    LandingPage,
+)
 from stac_pydantic.links import Relations
 from stac_pydantic.shared import MimeTypes, Provider
 
@@ -36,6 +42,21 @@ class CoreCrudClient(BaseCoreClient):
     collection_serializer: Type[serializers.Serializer] = attr.ib(
         default=serializers.CollectionSerializer
     )
+
+    def landing_page(self, **kwargs) -> LandingPage:
+        lp = super().landing_page(**kwargs)
+
+        # Privacy Policy URL
+        lp["links"].append(
+            {
+                "rel": "privacy-policy",
+                "type": MimeTypes.html.value,
+                "title": "EODC Privacy Policy",
+                "href": "https://eodc.eu/dataprotection",
+            }
+        )
+
+        return lp
 
     def all_collections(self, **kwargs) -> Collections:
         """Read all collections from the data providers."""
@@ -87,7 +108,9 @@ class CoreCrudClient(BaseCoreClient):
                 provider_id=provider,
             )
 
-    def item_collection(self, collection_id: str, limit: int = 10, **kwargs) -> ItemCollection:
+    def item_collection(
+        self, collection_id: str, limit: int = 10, **kwargs
+    ) -> ItemCollection:
         """Read an item collection from the data providers."""
         response = request_collection(fastapi_request=kwargs["request"])
         base_url = str(kwargs["request"].base_url)
@@ -286,7 +309,8 @@ class CoreCrudClient(BaseCoreClient):
         kwargs["request"]._json = {
             k: v
             for k, v in search_request.dict().items()
-            if v and k in ("collections", "ids", "bbox", "datetime", "intersects", "limit")
+            if v
+            and k in ("collections", "ids", "bbox", "datetime", "intersects", "limit")
         }
 
         response = request_search(fastapi_request=kwargs["request"])

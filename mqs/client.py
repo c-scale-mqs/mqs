@@ -92,6 +92,12 @@ def stac_request(
     )
     api_fragment = fastapi_request.url.fragment
 
+    api_netloc = (
+        api_netloc.rstrip("/")
+        if (api_netloc.endswith("/") and api_path.startswith("/"))
+        else api_netloc
+    )
+
     api_url = {
         "scheme": api_scheme,
         "netloc": api_netloc,
@@ -144,7 +150,7 @@ def request_all(fastapi_request: Request) -> ResponseDictType:
                 external_stac_url=data_provider.stac_url,
                 alternative_path="/collections",
             )
-        all_responses[data_provider.identifier] = response
+            all_responses[data_provider.identifier] = response
     return all_responses
 
 
