@@ -1,5 +1,6 @@
 """API configuration."""
-from typing import List
+from stac_pydantic.shared import MimeTypes
+from typing import Any, Dict, List
 
 from stac_fastapi.types.config import ApiSettings
 
@@ -19,6 +20,15 @@ class MqsSettings(ApiSettings):
     root_path: str = "/stac/v1"
     collection_delimiter: str = "|"
     data_providers: List[data_provider.DataProvider] = gocdb.get_data_providers()
+    links: List[Dict[str, Any]] = [
+        {
+            "rel": "privacy-policy",
+            "type": MimeTypes.html.value,
+            "title": "EODC Privacy Policy",
+            "href": "https://eodc.eu/dataprotection",
+        }
+    ]
+    reload: bool = True
 
 
 settings = MqsSettings()

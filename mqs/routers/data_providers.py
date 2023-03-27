@@ -22,7 +22,9 @@ data_providers: List[data_provider.DataProvider] = []
 
 def update_data_providers():
     global data_providers
-    data_providers = get_data_providers()
+    _data_providers = get_data_providers()
+    if _data_providers:
+        data_providers = _data_providers
 
 
 @router.on_event("startup")

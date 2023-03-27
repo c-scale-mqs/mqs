@@ -1,17 +1,20 @@
 """Item crud client."""
 
-import json
 import logging
-import operator
-from datetime import datetime
-from operator import attrgetter, itemgetter
-from typing import List, Optional, Set, Type, Union
-from urllib.parse import urlencode, urljoin
+import re
+from datetime import datetime as pydatetime
+from typing import List, Optional, Type, Union
+from urllib.parse import unquote_plus, urlencode, urljoin
 
 import attr
+import orjson
 from fastapi import HTTPException
 from pydantic import ValidationError
-from stac_fastapi.types.core import AsyncBaseCoreClient, BaseCoreClient
+from pygeofilter.backends.cql2_json import to_cql2
+from pygeofilter.parsers.cql2_text import parse as parse_cql2_text
+from shapely import box
+from stac_fastapi.pgstac.utils import filter_fields
+from stac_fastapi.types.core import BaseCoreClient
 from stac_fastapi.types.stac import (
     Collection,
     Collections,
@@ -20,14 +23,31 @@ from stac_fastapi.types.stac import (
     LandingPage,
 )
 from stac_pydantic.links import Relations
-from stac_pydantic.shared import MimeTypes, Provider
+from stac_pydantic.shared import MimeTypes
 
 from mqs import serializers
-from mqs.client import request_all, request_collection, request_search
+from mqs.client import (
+    ResponseDictType,
+    request_all,
+    request_collection,
+    request_search_post,
+    request_search_get,
+)
 from mqs.config import settings
 from mqs.types.search import MqsSTACSearch
+from mqs.utils import (
+    filter_spatially,
+    filter_temporally,
+    filter_collections,
+    filter_ids,
+    fix_duplicate_slashes,
+    make_valid_collection,
+    make_valid_item,
+    remove_provider_from_collection_ids,
+)
 
 logger = logging.getLogger(__name__)
+logger.setLevel(20)
 
 NumType = Union[float, int]
 
@@ -46,25 +66,37 @@ class CoreCrudClient(BaseCoreClient):
     def landing_page(self, **kwargs) -> LandingPage:
         lp = super().landing_page(**kwargs)
 
-        # Privacy Policy URL
-        lp["links"].append(
-            {
-                "rel": "privacy-policy",
-                "type": MimeTypes.html.value,
-                "title": "EODC Privacy Policy",
-                "href": "https://eodc.eu/dataprotection",
-            }
-        )
+        # Add custom links
+        lp["links"] += settings.links
 
         return lp
 
     def all_collections(self, **kwargs) -> Collections:
         """Read all collections from the data providers."""
         response = request_all(fastapi_request=kwargs["request"])
-        base_url = str(kwargs["request"].base_url)
+        base_url = fix_duplicate_slashes(str(kwargs["request"].base_url))
         serialized_collections = []
+        n_returned = 0
         for provider, collections in response.items():
-            for collection in collections.json()["collections"]:
+            try:
+                provider_collections = collections.json()["collections"]
+            except (AttributeError, KeyError) as ex:
+                logger.warning(
+                    "Could not fetch collections from data provider %s: %s",
+                    provider,
+                    ex,
+                )
+                continue
+            for collection in provider_collections:
+                mod_collection = make_valid_collection(collection)
+                if not mod_collection:
+                    logger.warning(
+                        "Could not validate STAC Collection (skipping): %s, %s",
+                        provider,
+                        collection,
+                    )
+                    continue
+                collection = mod_collection
                 serialized_collections.append(
                     self.collection_serializer.response_to_stac(
                         stac_collection=collection,
@@ -72,6 +104,7 @@ class CoreCrudClient(BaseCoreClient):
                         provider_id=provider,
                     )
                 )
+                n_returned += 1
 
         links = [
             {
@@ -90,49 +123,146 @@ class CoreCrudClient(BaseCoreClient):
                 "href": urljoin(base_url, "collections"),
             },
         ]
-        collection_list = Collections(
-            collections=serialized_collections or [], links=links
-        )
+
+        # Clean links
+        clean_links = []
+        for link in links:
+            clean = {}
+            for k, v in link.items():
+                if k == "href":
+                    clean[k] = fix_duplicate_slashes(v)
+                else:
+                    clean[k] = v
+            clean_links.append(clean)
+
+        if self.extension_is_enabled("ContextExtension"):
+            collection_list = Collections(
+                collections=serialized_collections or [],
+                links=clean_links,
+                context={"returned": n_returned},
+            )
+        else:
+            collection_list = Collections(
+                collections=serialized_collections or [],
+                links=links,
+            )
+
         return collection_list
 
     def get_collection(self, **kwargs) -> Collection:
-        """Read all collections from the data providers."""
-        base_url = str(kwargs["request"].base_url)
+        """Read a specific collection from a data provider."""
+        base_url = fix_duplicate_slashes(str(kwargs["request"].base_url))
         response = request_collection(fastapi_request=kwargs["request"])
         for provider, collection in response.items():  # only one collection is returned
-            if collection.status_code == 404:
-                raise HTTPException(status_code=404, detail="Collection not found")
+            mod_collection = make_valid_collection(collection.json())
+            if not mod_collection:
+                logger.warning(
+                    "Could not validate STAC Collection: %s, %s",
+                    provider,
+                    collection,
+                )
+                raise HTTPException(
+                    status_code=500, detail="Cannot validate STAC Collection."
+                )
+            collection = mod_collection
+
             return self.collection_serializer.response_to_stac(
-                stac_collection=collection.json(),
+                stac_collection=collection,
                 base_url=base_url,
                 provider_id=provider,
             )
 
     def item_collection(
-        self, collection_id: str, limit: int = 10, **kwargs
+        self,
+        collection_id: str,
+        limit: int = 10,
+        bbox: Optional[List[NumType]] = None,
+        datetime: Optional[Union[str, pydatetime]] = None,
+        **kwargs,
     ) -> ItemCollection:
         """Read an item collection from the data providers."""
-        response = request_collection(fastapi_request=kwargs["request"])
-        base_url = str(kwargs["request"].base_url)
+
+        base_args = {
+            "bbox": bbox,
+            "limit": limit,
+            "datetime": datetime,
+        }
+
+        # Remove None values from dict
+        clean = {}
+        for k, v in base_args.items():
+            if v is not None and v != []:
+                clean[k] = v
+
+        # validate model
+        try:
+            search_request = self.post_request_model(**clean)
+        except ValidationError as ex:
+            logger.warning(ex)
+            raise HTTPException(
+                status_code=400, detail="Invalid parameters provided"
+            ) from ex
+
+        # Do the request
+        request = kwargs["request"]
+        base_url = fix_duplicate_slashes(str(request.base_url))
+        response = request_collection(fastapi_request=request)
+
+        # Filter and serialize
+        filter_geom = None
+        if search_request.bbox:
+            filter_geom = box(*search_request.bbox)
+
+        filter_start_date = None
+        filter_end_date = None
+        if search_request.datetime:
+            filter_start_date = search_request.start_date
+            filter_end_date = search_request.end_date
+
         serialized_items = []
+
         for (
             provider,
             itemcollection,
         ) in response.items():  # only one item collection is returned
+
+            if not "features" in itemcollection.json():
+                continue
+
+            returned = 0
             for feature in itemcollection.json()["features"]:
+
+                mod_feature = make_valid_item(feature)
+
+                if not mod_feature:
+                    continue
+
+                if not filter_temporally(
+                    mod_feature, start_date=filter_start_date, end_date=filter_end_date
+                ):
+                    continue
+
+                if not filter_spatially(mod_feature, filter_geom):
+                    continue
+
                 serialized_items.append(
                     self.item_serializer.response_to_stac(
-                        stac_item=feature,
+                        stac_item=mod_feature,
                         base_url=base_url,
                         provider_id=provider,
                     )
                 )
-            stac_links = itemcollection.json()["links"]
+
+            stac_links = []
+            if "links" in itemcollection.json():
+                stac_links = itemcollection.json()["links"]
+
             next = (
                 True
                 if any([l["rel"] in (Relations.next.value, "next") for l in stac_links])
                 else False
             )
+
             previous = (
                 True
                 if any(
@@ -140,7 +270,9 @@ class CoreCrudClient(BaseCoreClient):
                 )
                 else False
             )
+
             links = []
+
             if next:
                 next_href = [
                     l["href"]
@@ -161,6 +293,7 @@ class CoreCrudClient(BaseCoreClient):
                         "method": "GET",
                     }
                 )
+
             if previous:
                 previous_href = [
                     l["href"]
@@ -182,6 +315,17 @@ class CoreCrudClient(BaseCoreClient):
                     }
                 )
 
+            # Clean links
+            clean_links = []
+            for link in links:
+                clean = {}
+                for k, v in link.items():
+                    if k == "href":
+                        clean[k] = fix_duplicate_slashes(v)
+                    else:
+                        clean[k] = v
+                clean_links.append(clean)
+
             context_obj = (
                 None
                 if "context" not in itemcollection.json().keys()
@@ -192,17 +336,28 @@ class CoreCrudClient(BaseCoreClient):
             return ItemCollection(
                 type="FeatureCollection",
                 features=serialized_items,
-                links=links,
+                links=clean_links,
                 context=context_obj,
             )
 
     def get_item(self, **kwargs) -> Item:
         """Read an item from the data providers."""
         response = request_collection(fastapi_request=kwargs["request"])
-        base_url = str(kwargs["request"].base_url)
+        base_url = fix_duplicate_slashes(str(kwargs["request"].base_url))
         for provider, item in response.items():  # only one item is returned
+            mod_feature = make_valid_item(item.json())
+            if not mod_feature:
+                logger.warning(
+                    "Could not validate STAC Item (skipping): %s, %s",
+                    provider,
+                    item,
+                )
+                raise HTTPException(
+                    status_code=500, detail="Cannot validate STAC Item."
+                )
+            feature = mod_feature
             return self.item_serializer.response_to_stac(
-                stac_item=item.json(),
+                stac_item=feature,
                 base_url=base_url,
                 provider_id=provider,
             )
@@ -212,40 +367,72 @@ class CoreCrudClient(BaseCoreClient):
         collections: Optional[List[str]] = None,
         ids: Optional[List[str]] = None,
         bbox: Optional[List[NumType]] = None,
-        datetime: Optional[Union[str, datetime]] = None,
+        datetime: Optional[Union[str, pydatetime]] = None,
         limit: Optional[int] = 10,
         query: Optional[str] = None,
         token: Optional[str] = None,
         fields: Optional[List[str]] = None,
         sortby: Optional[str] = None,
+        filter: Optional[str] = None,
+        filter_lang: Optional[str] = None,
+        intersects: Optional[str] = None,
         **kwargs,
     ) -> ItemCollection:
         """GET search catalog."""
         # Parse request parameters
 
+        # only bbox or intersects must be provided
+        if bbox and intersects:
+            raise HTTPException(
+                status_code=400, detail="Only bbox or intersects should be specified."
+            )
+
+        # get request
+        request = kwargs["request"]
+        query_params = request.query_params
+
+        # Kludgy fix because using factory does not allow alias for filter-lang
+        if filter_lang is None:
+            match = re.search(
+                r"filter-lang=([a-z0-9-]+)", str(query_params), re.IGNORECASE
+            )
+            if match:
+                filter_lang = match.group(1)
+
+        # Parse request parameters
         base_args = {
-            "collections": collections,
+            "collections": remove_provider_from_collection_ids(collections),
             "ids": ids,
             "bbox": bbox,
             "limit": limit,
             "token": token,
-            "query": json.loads(query) if query else query,
+            "query": orjson.loads(unquote_plus(query)) if query else query,
         }
+
+        if filter:
+            if filter_lang == "cql2-text":
+                ast = parse_cql2_text(filter)
+                base_args["filter"] = orjson.loads(to_cql2(ast))
+                base_args["filter-lang"] = "cql2-json"
 
         if datetime:
             base_args["datetime"] = datetime
 
+        if intersects:
+            base_args["intersects"] = orjson.loads(unquote_plus(intersects))
+
         if sortby:
-            # https://github.com/radiantearth/stac-api-spec/tree/master/item-search#sort
+            # https://github.com/radiantearth/stac-spec/tree/master/api-spec/extensions/sort#http-get-or-post-form
             sort_param = []
-            for s in sortby:
-                sort = "+" + s if not s[0] in ("+", "-") else s
-                sort_param.append(
-                    {
-                        "field": sort[1:],
-                        "direction": "asc" if sort[0] == "+" else "desc",
-                    }
-                )
+            for sort in sortby:
+                sortparts = re.match(r"^([+-]?)(.*)$", sort)
+                if sortparts:
+                    sort_param.append(
+                        {
+                            "field": sortparts.group(2).strip(),
+                            "direction": "desc" if sortparts.group(1) == "-" else "asc",
+                        }
+                    )
             base_args["sortby"] = sort_param
 
         if fields:
@@ -260,73 +447,124 @@ class CoreCrudClient(BaseCoreClient):
                     includes.add(field)
             base_args["fields"] = {"include": includes, "exclude": excludes}
 
-        # Do the request
+        # Remove None values from dict
+        clean = {}
+        for k, v in base_args.items():
+            if v is not None and v != []:
+                clean[k] = v
+
         # validate model
         try:
-            search_request = MqsSTACSearch(**base_args)
-        except ValidationError:
-            raise HTTPException(status_code=400, detail="Invalid parameters provided")
+            search_request = self.post_request_model(**clean)
+        except ValidationError as ex:
+            logger.warning(ex)
+            raise HTTPException(
+                status_code=400, detail="Invalid parameters provided"
+            ) from ex
 
-        # convert GET to POST request
-        resp = self.post_search(search_request, request=kwargs["request"])
+        # Do the request
+        response = request_search_get(fastapi_request=kwargs["request"])
+
+        base_url = fix_duplicate_slashes(str(kwargs["request"].base_url))
+
+        resp = self._parse_search(
+            response=response, base_url=base_url, search_request=search_request
+        )
 
         # Pagination
         page_links = []
-        for link in resp["links"]:
-            if link["rel"] == Relations.next or link["rel"] == Relations.previous:
-                query_params = dict(kwargs["request"].query_params)
-                if link["body"] and link["merge"]:
-                    query_params.update(
-                        {k: v for k, v in link["body"].items() if k == "token"}
+        if "links" in resp.keys():
+            for link in resp["links"]:
+                if link["rel"] == Relations.next or link["rel"] == Relations.previous:
+                    query_params = dict(query_params)
+                    if link["body"] and link["merge"]:
+                        query_params.update(
+                            {k: v for k, v in link["body"].items() if k == "token"}
+                        )
+
+                    link["method"] = "GET"
+                    link["href"] = "?".join(
+                        [f"{base_url}search?{urlencode(query_params)}"]
                     )
-                link["method"] = "GET"
-                link["href"] = "?".join(
-                    [f"{kwargs['request'].base_url}search?{urlencode(query_params)}"]
-                )
-                link["body"] = None
-                link["merge"] = False
-                page_links.append(link)
-            else:
-                page_links.append(link)
-        resp["links"] = page_links
+                    link["body"] = None
+                    link["merge"] = False
+                    page_links.append(link)
+                else:
+                    page_links.append(link)
+
+        # Clean links
+        clean_links = []
+        for link in page_links:
+            clean = {}
+            for k, v in link.items():
+                if k == "href":
+                    clean[k] = fix_duplicate_slashes(v)
+                else:
+                    clean[k] = v
+            clean_links.append(clean)
+
+        resp["links"] = clean_links
 
         return resp
 
     def post_search(self, search_request: MqsSTACSearch, **kwargs) -> ItemCollection:
         """POST search catalog."""
-        # remove data provider from collection ids
-        collections_stac = []
-        if search_request.collections:
-            for c in search_request.collections:
-                if settings.collection_delimiter in c:
-                    collections_stac.append(c.split(settings.collection_delimiter)[1])
-                else:
-                    collections_stac.append(c)
-        search_request.collections = collections_stac
+        search_request.collections = remove_provider_from_collection_ids(
+            search_request.collections
+        )
 
-        # simplify request to core functions for now, i.e.,
-        # - ignore query, sortby, fields, (filter?), token
-        kwargs["request"]._json = {
-            k: v
-            for k, v in search_request.dict().items()
-            if v
-            and k in ("collections", "ids", "bbox", "datetime", "intersects", "limit")
-        }
+        response = request_search_post(fastapi_request=kwargs["request"])
 
-        response = request_search(fastapi_request=kwargs["request"])
+        base_url = fix_duplicate_slashes(str(kwargs["request"].base_url))
 
-        base_url = str(kwargs["request"].base_url)
+        return self._parse_search(
+            response=response, base_url=base_url, search_request=search_request
+        )
+
+    def _parse_search(
+        self,
+        response: ResponseDictType,
+        base_url: str,
+        search_request: MqsSTACSearch,
+        **kwargs,
+    ) -> ItemCollection:
 
         serialized_items = []
         total_count = 0
+
+        filter_geom = None
+        if search_request.intersects:
+            filter_geom = search_request.intersects
+        elif search_request.bbox:
+            filter_geom = box(*search_request.bbox)
+
+        filter_start_date = None
+        filter_end_date = None
+        if search_request.datetime:
+            filter_start_date = search_request.start_date
+            filter_end_date = search_request.end_date
+
         for provider, itemcollection in response.items():
             if not "features" in itemcollection.json():
                 continue
             returned = 0
             for feature in itemcollection.json()["features"]:
+                mod_feature = make_valid_item(feature)
+                if not mod_feature:
+                    continue
+                if not filter_temporally(
+                    mod_feature, start_date=filter_start_date, end_date=filter_end_date
+                ):
+                    continue
+                if not filter_spatially(mod_feature, filter_geom):
+                    continue
+                if not filter_collections(mod_feature, search_request.collections):
+                    continue
+                if not filter_ids(mod_feature, search_request.ids):
+                    continue
                 serialized_items.append(
                     self.item_serializer.response_to_stac(
-                        stac_item=feature,
+                        stac_item=mod_feature,
                         base_url=base_url,
                         provider_id=provider,
                     )
@@ -345,33 +583,34 @@ class CoreCrudClient(BaseCoreClient):
         # Sorting
         sort_param = []
         if search_request.sortby:
-            for sort in search_request.sortby:
+            for sort_val in search_request.sortby:
                 sort_param.append(
-                    (sort.field, True if sort.direction == "desc" else False)
+                    (sort_val.field, True if sort_val.direction == "desc" else False)
                 )
         else:
             # Default sort is date
             sort_param.append(("properties.datetime", True))
         sort_param.reverse()
-        for sort in sort_param:
-            if sort[0].split(".")[0] == "properties":
+
+        for sort_val in sort_param:
+            if sort_val[0].split(".")[0] == "properties":
                 serialized_items.sort(
-                    key=lambda e: e["properties"][sort[0].split(".")[1]],
-                    reverse=sort[1],
+                    key=lambda e: e["properties"][sort_val[0].split(".")[1]],
+                    reverse=sort_val[1],
                 )
             else:
-                serialized_items.sort(key=lambda e: e[sort[0]], reverse=sort[1])
+                serialized_items.sort(key=lambda e: e[sort_val[0]], reverse=sort_val[1])
 
         # Pagination
         token = 0
         if search_request.token:
             try:
                 token = int(search_request.token)
-            except ValueError:
+            except ValueError as exc:
                 raise HTTPException(
                     status_code=400,
                     detail="Non-integer tokens not supported, use page numbers.",
-                )
+                ) from exc
 
         paginated_results = []
         for offset in range(0, len(serialized_items), search_request.limit):
@@ -385,11 +624,26 @@ class CoreCrudClient(BaseCoreClient):
 
         try:
             results = paginated_results[token]
-        except IndexError:
-            raise HTTPException(
-                status_code=404,
-                detail="Page not found.",
-            )
+        except IndexError as exc:
+            raise HTTPException(status_code=404, detail="Page not found.") from exc
+
+        if search_request.fields:
+            cleaned_features: List[Item] = []
+            for feature in results:
+                clean_feature = feature
+                try:
+                    _clean_feature = filter_fields(
+                        feature,
+                        search_request.fields.include,
+                        search_request.fields.exclude,
+                    )
+                except Exception as exc:
+                    logger.warning("Cannot filter fields!")
+                    logger.warning(exc)
+                else:
+                    clean_feature = _clean_feature
+                cleaned_features.append(clean_feature)
+            results = cleaned_features
 
         context_obj = None
         if self.extension_is_enabled("ContextExtension"):
@@ -413,7 +667,7 @@ class CoreCrudClient(BaseCoreClient):
                 {
                     "rel": Relations.next.value,
                     "type": "application/geo+json",
-                    "href": f"{kwargs['request'].base_url}search",
+                    "href": f"{base_url}search",
                     "method": "POST",
                     "body": body,
                     "merge": True,
@@ -425,16 +679,27 @@ class CoreCrudClient(BaseCoreClient):
                 {
                     "rel": Relations.previous.value,
                     "type": "application/geo+json",
-                    "href": f"{kwargs['request'].base_url}search",
+                    "href": f"{base_url}search",
                     "method": "POST",
                     "body": body,
                     "merge": True,
                 }
             )
 
+        # Clean links
+        clean_links = []
+        for link in links:
+            clean = {}
+            for k, v in link.items():
+                if k == "href":
+                    clean[k] = fix_duplicate_slashes(v)
+                else:
+                    clean[k] = v
+            clean_links.append(clean)
+
         return ItemCollection(
             type="FeatureCollection",
             features=results,
-            links=links,
+            links=clean_links,
             context=context_obj,
         )

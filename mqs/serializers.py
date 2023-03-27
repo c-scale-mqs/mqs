@@ -38,7 +38,10 @@ class CollectionSerializer(Serializer):
             base_url=base_url,
         ).create_links()
 
-        stac_links = stac_collection["links"]
+        stac_links = (
+            [] if "links" not in stac_collection.keys() else stac_collection["links"]
+        )
+
         if stac_links:
             no_items_links = [l for l in stac_links if not l["rel"] == "items"]
             collection_links += resolve_links(no_items_links, base_url)
@@ -125,15 +128,23 @@ class ItemSerializer(Serializer):
         cls, stac_item: stac_types.Item, base_url: str, provider_id: str
     ) -> stac_types.Item:
         """Transform (external) stac item to cscale stac item."""
-        item_id = stac_item["id"]
-        collection_id = settings.collection_delimiter.join(
-            [provider_id, stac_item["collection"]]
+
+        item_id = [] if "id" not in stac_item.keys() else stac_item["id"]
+
+        collection_id = (
+            []
+            if "collection" not in stac_item.keys()
+            else settings.collection_delimiter.join(
+                [provider_id, stac_item["collection"]]
+            )
         )
+
         item_links = ItemLinks(
             collection_id=collection_id, item_id=item_id, base_url=base_url
         ).create_links()
 
-        stac_links = stac_item["links"]
+        stac_links = [] if "links" not in stac_item.keys() else stac_item["links"]
+
         if stac_links:
             item_links += resolve_links(stac_links, base_url)
 
@@ -143,17 +154,29 @@ class ItemSerializer(Serializer):
             else stac_item["stac_extensions"]
         )
 
+        stac_version = (
+            [] if "stac_version" not in stac_item.keys() else stac_item["stac_version"]
+        )
+
+        geometry = [] if "geometry" not in stac_item.keys() else stac_item["geometry"]
+
+        bbox = [] if "bbox" not in stac_item.keys() else stac_item["bbox"]
+
+        properties = (
+            [] if "properties" not in stac_item.keys() else stac_item["properties"]
+        )
+
+        assets = [] if "assets" not in stac_item.keys() else stac_item["assets"]
+
         return stac_types.Item(
             type="Feature",
-            stac_version=stac_item["stac_version"],
+            stac_version=stac_version,
             stac_extensions=stac_extensions,
             id=item_id,
             collection=collection_id,
-            geometry=stac_item["geometry"],
-            bbox=stac_item["bbox"],
-            properties=[]
-            if "properties" not in stac_item.keys()
-            else stac_item["properties"],
+            geometry=geometry,
+            bbox=bbox,
+            properties=properties,
             links=item_links,
-            assets=stac_item["assets"],
+            assets=assets,
         )

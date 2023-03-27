@@ -29,6 +29,11 @@ services:
       - "traefik.http.middlewares.stac-help-cors-headers.headers.accesscontrolexposeheaders=Location,Www-Authenticate,ETag,Expires,Last-Modified,Cache-Control,Content-Type"
       - "traefik.http.routers.stac-help-http.middlewares=https-redirect,stac-help-cors-headers"
       - "traefik.http.routers.stac-help-https.middlewares=stac-help-cors-headers"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
     networks:
       - mqs01
 

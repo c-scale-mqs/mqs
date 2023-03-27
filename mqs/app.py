@@ -4,10 +4,12 @@ from fastapi.responses import ORJSONResponse
 from stac_fastapi.api.app import StacApi
 from stac_fastapi.api.models import create_get_request_model, create_post_request_model
 from stac_fastapi.extensions.core import (
-    ContextExtension,
-    FieldsExtension,
+    # ContextExtension,
     SortExtension,
     TokenPaginationExtension,
+    FieldsExtension,
+    FilterExtension,
+    QueryExtension,
 )
 
 from mqs.config import settings
@@ -20,8 +22,10 @@ from mqs.version import __version__ as mqs_version
 extensions = [
     SortExtension(),
     TokenPaginationExtension(),
-    ContextExtension()  # Note: deprecated in January 2023
-    # FieldsExtension(), # currently deactivated
+    # ContextExtension(),  # Note: deprecated in January 2023,
+    FieldsExtension(),
+    FilterExtension(),
+    QueryExtension(),
 ]
 get_request_model = create_get_request_model(extensions)
 post_request_model = create_post_request_model(extensions, base_model=MqsSTACSearch)
