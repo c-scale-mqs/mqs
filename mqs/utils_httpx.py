@@ -62,6 +62,9 @@ def _send_httpx_request_get(
     except httpx.HTTPStatusError as ex:
         logger.warning("Request failed with status code %s", ex.response.status_code)
         return ex.response
+    except httpx.ConnectError as ex:
+        logger.warning("Request connect error: %s", str(ex))
+        return ex.request
     except httpx.RequestError as ex:
         logger.warning("Request failed for some other reason")
         return ex.request

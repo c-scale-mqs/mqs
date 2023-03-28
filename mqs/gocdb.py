@@ -2,10 +2,10 @@
 import logging
 from collections import OrderedDict
 from typing import List
-from fastapi import HTTPException
 
 import httpx
 import xmltodict
+from fastapi import HTTPException
 from pydantic.networks import AnyHttpUrl
 
 from mqs.types import data_provider

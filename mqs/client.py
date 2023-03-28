@@ -1,7 +1,5 @@
 """http client management"""
 import logging
-from functools import lru_cache, wraps
-from time import monotonic_ns
 from typing import Dict, Optional
 from urllib.parse import urlunparse
 

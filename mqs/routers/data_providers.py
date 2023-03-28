@@ -1,15 +1,12 @@
 """gocdb endpoint management"""
-import datetime
 import logging
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks
-
 from fastapi_utils.tasks import repeat_every
 
 from mqs.gocdb import get_data_providers
 from mqs.types import data_provider
-
 
 logger = logging.getLogger(__name__)
 

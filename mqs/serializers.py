@@ -1,14 +1,10 @@
 """Serializers."""
 import abc
-import json
-from datetime import datetime
 from typing import TypedDict
 
 import attr
 from stac_fastapi.types import stac as stac_types
-from stac_fastapi.types.config import Settings
 from stac_fastapi.types.links import CollectionLinks, ItemLinks, resolve_links
-from stac_pydantic.shared import DATETIME_RFC339
 
 from mqs.config import settings
 

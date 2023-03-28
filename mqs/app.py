@@ -4,12 +4,11 @@ from fastapi.responses import ORJSONResponse
 from stac_fastapi.api.app import StacApi
 from stac_fastapi.api.models import create_get_request_model, create_post_request_model
 from stac_fastapi.extensions.core import (
-    # ContextExtension,
-    SortExtension,
-    TokenPaginationExtension,
-    FieldsExtension,
+    FieldsExtension,  # ContextExtension,
     FilterExtension,
     QueryExtension,
+    SortExtension,
+    TokenPaginationExtension,
 )
 
 from mqs.config import settings

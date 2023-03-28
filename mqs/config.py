@@ -1,8 +1,8 @@
 """API configuration."""
-from stac_pydantic.shared import MimeTypes
 from typing import Any, Dict, List
 
 from stac_fastapi.types.config import ApiSettings
+from stac_pydantic.shared import MimeTypes
 
 from mqs import gocdb
 from mqs.types import data_provider
