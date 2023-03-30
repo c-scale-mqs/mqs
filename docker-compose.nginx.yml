@@ -10,10 +10,10 @@ services:
       - traefik.enable=true
       - traefik.http.services.stac-help.loadbalancer.server.port=80
       - traefik.http.routers.stac-help-http.entrypoints=http
-      - "traefik.http.routers.stac-help-http.rule=(Host(`${MQS_HOST}`) && PathPrefix(`/help`))"
+      - "traefik.http.routers.stac-help-http.rule=((Host(`${MQS_HOST_ALT}`) && PathPrefix(`/help`)) || (Host(`${MQS_HOST}`) && PathPrefix(`/help`)))"
       - traefik.docker.network=mqs01
       - traefik.http.routers.stac-help-https.entrypoints=https
-      - "traefik.http.routers.stac-help-https.rule=(Host(`${MQS_HOST}`) && PathPrefix(`/help`))"
+      - "traefik.http.routers.stac-help-https.rule=((Host(`${MQS_HOST_ALT}`) && PathPrefix(`/help`)) || (Host(`${MQS_HOST}`) && PathPrefix(`/help`)))"
       - traefik.http.routers.stac-help-https.tls=true
       - traefik.http.routers.stac-help-https.tls.certresolver=le
       - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
