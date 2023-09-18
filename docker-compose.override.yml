@@ -5,6 +5,7 @@ services:
       - 8000:8000
     volumes:
       - .:/mqs
+      # - /config.yaml:/opt/data_providers.yaml:ro
     build:
       context: ./
       dockerfile: ./Dockerfile.dev

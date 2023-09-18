@@ -204,21 +204,39 @@ def load_config(config_file_path: Optional[str] = None) -> dict:
         with open(yaml_file_path, 'r') as file:
             data_provider_config = yaml.safe_load(file)
     except (yaml.YAMLError, FileNotFoundError) as e:
-        logger.warning(f"Error loading Data Providers YAML config: {e}")
+        logger.warning(f"Cannot load Data Providers YAML config: {e}")
         return {'whitelist': [], 'blacklist': [], 'data_providers': []}  # Return empty lists on error
 
-    # Access the white-listed, black-listed, and all data providers
-    white_listed_providers = data_provider_config.get('whitelist', [])
-    black_listed_providers = data_provider_config.get('blacklist', [])
-    all_providers = [data_provider.DataProvider(**data) for data in data_provider_config.get('data_providers', [])]
+    # Initialize lists
+    whitelist_providers = []
+    blacklist_providers = []
+    all_providers = []
+
+    try:
+        # Access the whitelist
+        whitelist_providers = data_provider_config.get('whitelist', [])
+    except AttributeError:
+        logger.warning("Cannot access whitelist in the YAML config.")
+
+    try:
+        # Access the blacklist
+        blacklist_providers = data_provider_config.get('blacklist', [])
+    except AttributeError:
+        logger.warning("Cannot access blacklist in the YAML config.")
+
+    try:
+        # Access all data providers and create instances
+        all_providers = [data_provider.DataProvider(**data) for data in data_provider_config.get('data_providers', [])]
+    except (AttributeError, TypeError):
+        logger.warning("Cannot access or process data providers in the YAML config.")
 
     # Call is_online for each data provider
     for provider in all_providers:
         provider.is_online()
 
     return {
-        'whitelist': white_listed_providers,
-        'blacklist': black_listed_providers,
+        'whitelist': whitelist_providers,
+        'blacklist': blacklist_providers,
         'data_providers': all_providers
     }
 
