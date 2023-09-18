@@ -1,12 +1,14 @@
 """gocdb client management"""
 import logging
 from collections import OrderedDict
-from typing import List
+import os
+from typing import List, Optional
 
 import httpx
 import xmltodict
 from fastapi import HTTPException
 from pydantic.networks import AnyHttpUrl
+import yaml
 
 from mqs.types import data_provider
 from mqs.utils_httpx import send_httpx_request
@@ -184,6 +186,61 @@ def _dict2list(dic: OrderedDict) -> List[OrderedDict]:
     return [dic] if _is_dict(dic) else dic
 
 
+def load_config(config_file_path: Optional[str] = None) -> dict:
+    """
+    Load additional data provider configurations from the specified YAML file or a default file path.
+
+    Parameters:
+        config_file_path (str, optional): Path to the YAML config file. Defaults to None.
+
+    Returns:
+        dict: Dictionary containing whitelist, blacklist, and all data providers as instances of DataProvider.
+    """
+    # Get the YAML file location from the provided path or environment variable
+    yaml_file_path = config_file_path or os.getenv("DATA_PROVIDERS_CONFIG_FILE_PATH", "/opt/data_providers.yaml")
+
+    try:
+        # Load the YAML configuration
+        with open(yaml_file_path, 'r') as file:
+            data_provider_config = yaml.safe_load(file)
+    except (yaml.YAMLError, FileNotFoundError) as e:
+        logger.warning(f"Cannot load Data Providers YAML config: {e}")
+        return {'whitelist': [], 'blacklist': [], 'data_providers': []}  # Return empty lists on error
+
+    # Initialize lists
+    whitelist_providers = []
+    blacklist_providers = []
+    all_providers = []
+
+    try:
+        # Access the whitelist
+        whitelist_providers = data_provider_config.get('whitelist', [])
+    except AttributeError:
+        logger.warning("Cannot access whitelist in the YAML config.")
+
+    try:
+        # Access the blacklist
+        blacklist_providers = data_provider_config.get('blacklist', [])
+    except AttributeError:
+        logger.warning("Cannot access blacklist in the YAML config.")
+
+    try:
+        # Access all data providers and create instances
+        all_providers = [data_provider.DataProvider(**data) for data in data_provider_config.get('data_providers', [])]
+    except (AttributeError, TypeError):
+        logger.warning("Cannot access or process data providers in the YAML config.")
+
+    # Call is_online for each data provider
+    for provider in all_providers:
+        provider.is_online()
+
+    return {
+        'whitelist': whitelist_providers,
+        'blacklist': blacklist_providers,
+        'data_providers': all_providers
+    }
+
+
 def get_data_providers() -> List[data_provider.DataProvider]:
     """Function to collect all registered data providers and STAC endpoints.
 
@@ -192,6 +249,7 @@ def get_data_providers() -> List[data_provider.DataProvider]:
     """
     data_providers = []
 
+    # Query the GOCDB
     sites = get_site_names()
     for site in sites:
         stac_url = get_stac_endpoint(site)
@@ -206,4 +264,17 @@ def get_data_providers() -> List[data_provider.DataProvider]:
                 )
             )
             data_providers[-1].is_online()
-    return data_providers
+
+    # Load the local configuration
+    config_data = load_config()
+    all_providers = config_data['data_providers']
+    blacklist_providers = config_data['blacklist']
+    whitelist_providers = config_data['whitelist']
+
+    # Concatenate the list of all data providers considering only white-listed data providers
+    all_data_providers = data_providers + [provider for provider in all_providers if provider.identifier in whitelist_providers]
+
+    # Remove black-listed data providers
+    filtered_data_providers = [provider for provider in all_data_providers if provider.identifier not in blacklist_providers]
+
+    return filtered_data_providers

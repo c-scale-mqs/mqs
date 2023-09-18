@@ -47,6 +47,9 @@ services:
       # Use the public network created to be shared between Traefik and
       # any other service that needs to be publicly available with HTTPS
       - mqs01
+    # volumes:
+    #   # If applicable, mount the custom data provider configuration
+    #   - /path/to/custom_data_providers_config.yaml:/opt/data_providers.yaml:ro
     logging:
       driver: "json-file"
       options:
