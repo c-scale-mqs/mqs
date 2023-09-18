@@ -98,6 +98,61 @@ docker-compose up --build
 
 without the `-f` option!
 
+## Whitelisting Non-GOCDB Sites
+
+In this project, a YAML configuration file is used to manage whitelisted and blacklisted data providers. This configuration provides control over which providers to include or exclude in the application.
+
+### YAML Configuration
+
+The YAML configuration file, typically named `data_providers.yaml`, has the following structure:
+
+```yaml
+# Sample YAML configuration for data providers
+
+whitelist:
+  - provider1
+  - provider2
+
+blacklist:
+  - provider3
+  - provider4
+
+data_providers:
+  - identifier: provider1
+    name: Provider 1
+    stac_url: https://provider1.com/api/stac
+    limit: 100
+
+  # Add more data providers as needed
+```
+
+* `whitelist`: Contains identifiers of white-listed data providers.
+* `blacklist`: Contains identifiers of black-listed data providers. Can refer to GOCDB sites as well.
+* `data_providers`: Contains information about each data provider, including their identifier, name, STAC URL, and limit.
+
+### Including in Docker Compose
+
+To use this configuration in Docker Compose, the YAML file can be mounted into the desired location within the container. Additionally, you can define an environment variable to specify the location of the configuration file.
+
+Here's an example of how to modify the Docker Compose file to include the configuration:
+
+```yaml
+version: '3'
+services:
+  backend:
+    environment:
+      - DATA_PROVIDERS_CONFIG_FILE_PATH=/path/to/config.yaml  # Set the desired path
+    volumes:
+      - ./config.yaml:/path/to/config.yaml
+
+```
+
+Replace `backend` with the name of the service and adjust the other configuration details accordingly. In this example, the `DATA_PROVIDERS_CONFIG_FILE_PATH` environment variable is used to define the location of the configuration file within the container.
+
+If the environment variable is not specified, the default location for the configuration file is assumed to be `/opt/data_providers.yaml`.
+
+Ensure that the application reads the configuration from the specified path, either the one defined by the environment variable or the default path, within the container to utilize the whitelisting and blacklisting functionality effectively.
+
 ## Testing
 
 The tests inside the MQS container started in development mode can be executed via
