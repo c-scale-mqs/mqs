@@ -14,6 +14,7 @@ from stac_pydantic import Collection as pydantic_collection
 from stac_pydantic import Item as pydantic_item
 from stac_pydantic.collection import SpatialExtent, TimeInterval
 from stac_pydantic.item import ItemProperties
+from stac_pydantic.version import STAC_VERSION
 
 from mqs.config import settings
 
@@ -43,6 +44,9 @@ def custom_openapi(api: StacApi):
 
 
 def is_valid_collection(collection: dict) -> bool:
+    # ignore stac version
+    collection["stac_version"] = STAC_VERSION
+    
     try:
         pydantic_collection(**collection)
         return True
@@ -91,7 +95,7 @@ def make_valid_collection(collection: dict) -> Collection:
         collection["summaries"] = _fix_summaries(collection["summaries"])
     else:
         collection["summaries"] = {}
-
+    
     return collection if is_valid_collection(collection) else None
 
 
@@ -145,6 +149,9 @@ def get_extent(stac: dict) -> list:
 
 
 def is_valid_item(item: dict) -> bool:
+    # ignore stac version
+    item["stac_version"] = STAC_VERSION
+
     try:
         pydantic_item(**item)
         return True
